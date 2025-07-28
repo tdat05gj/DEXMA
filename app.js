@@ -459,7 +459,7 @@ function initializeApp() {
                 const tx = await contract.mint(recipient, { value: mintFee });
                 showStatus("Transaction submitted, waiting for confirmation...", "");
                 await tx.wait();
-                showStatus("Mint successful! Received 0.0666 GJ.", "success");
+                showStatus("Mint successful! Received 0.666 GJ.", "success");
                 await updateBalance();
                 await updateWalletUI(); // Refresh wallet UI after mint
             } catch (error) {

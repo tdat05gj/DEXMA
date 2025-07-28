@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="GJ DEX - Trade, Add Liquidity, and Mint Tokens on Doma Testnet">
+    <meta name="keywords" content="sdoma">
+    <meta name="author" content="DEXMA.ORG">
+    <meta name="robots" content="index, follow">
+    <title>GJ DEX - Doma Testnet</title>
+    <link rel="stylesheet" href="styles.css">
+     <link rel="icon" type="image/x-icon" href="./gj.jpg">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+    <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
+    <script src="app.js"></script>
+    <script src="dex.js"></script>
+</head>
+<body>
+    <header>
+        <h1>
+            <img src="gj.jpg" alt="GJ DEX Logo" class="logo" />
+            DEXMA
+        </h1>
+        <div class="wallet-section">
+            <div class="balance-display" style="display: none;">
+                <span id="ethBalance" class="balance-item">ETH: 0</span>
+                <span id="gjBalance" class="balance-item">GJ: 0</span>
+            </div>
+            <button id="connectWallet">Connect Wallet</button>
+        </div>
+    </header>
+
+    <main>
+        <div class="dex-grid">
+            <!-- Add Liquidity Card -->
+            <div class="dex-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <span class="card-icon">💧</span>
+                        Add Liquidity
+                    </h2>
+                </div>
+                <div class="card-content">
+                    <form id="addLpForm">
+                        <div class="form-group">
+                            <label for="lpTokenAddress">Token Address:</label>
+                            <input type="text" id="lpTokenAddress" placeholder="0x..." required>
+                            <div id="lpTokenInfo" class="token-info"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="lpTokenAmount">Token Amount:</label>
+                            <input type="number" id="lpTokenAmount" placeholder="0.0" step="any" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="lpEthAmount">ETH Amount:</label>
+                            <div class="input-container">
+                                <input type="number" id="lpEthAmount" placeholder="0.0" step="any" required>
+                                <span class="lock-icon">🔒</span>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn">Add Liquidity</button>
+                    </form>
+                    <div id="lpStatus" class="status"></div>
+                </div>
+            </div>
+
+            <!-- Swap Card -->
+            <div class="dex-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <span class="card-icon">🔄</span>
+                        Swap
+                    </h2>
+                </div>
+                <div class="card-content">
+                    <form id="swapForm">
+                        <div class="form-group">
+                            <label for="swapTokenAddress">Token Address:</label>
+                            <input type="text" id="swapTokenAddress" placeholder="0x..." required>
+                            <div id="swapTokenInfo" class="token-info"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="swapDirection">Direction:</label>
+                            <select id="swapDirection" required>
+                                <option value="ethToToken">ETH → Token</option>
+                                <option value="tokenToEth">Token → ETH</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="swapAmount" id="swapAmountLabel">Amount:</label>
+                            <input type="number" id="swapAmount" placeholder="0.0" step="any" required>
+                            <div id="swapAmountHint" style="font-size: 0.8rem; color: #888; margin-top: 0.25rem;"></div>
+                        </div>
+                        <div id="swapPreview" class="swap-preview"></div>
+                        <button type="submit" class="btn">Swap</button>
+                    </form>
+                    <div id="swapStatus" class="status"></div>
+                </div>
+            </div>
+
+            <!-- Price Chart Card -->
+            <div class="dex-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <span class="card-icon">📈</span>
+                        Price Chart
+                    </h2>
+                </div>
+                <div class="card-content">
+                    <form id="chartForm">
+                        <div class="form-group">
+                            <label for="chartTokenAddress">Token Address:</label>
+                            <input type="text" id="chartTokenAddress" placeholder="0x..." required>
+                            <div id="chartTokenInfo" class="token-info"></div>
+                        </div>
+                        <button type="submit" class="btn">Load Chart</button>
+                    </form>
+                    <div class="chart-container">
+                        <div id="tvChart" style="width: 100%; height: 300px; background: #0a0a0a; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #ffd700;">
+                            📈 Enter token address and click "Load Chart" to view candlestick data
+                        </div>
+                    </div>
+                    <div id="chartStatus" class="status"></div>
+                </div>
+            </div>
+
+            <!-- My Pools Card -->
+            <div class="dex-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <span class="card-icon">🏊</span>
+                        My Pools
+                    </h2>
+                </div>
+                <div class="card-content">
+                    <div id="myPools">
+                        <div class="chart-loading">Connect wallet to view your pools</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mint GJ Card -->
+            <div class="dex-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <img src="gj.jpg" alt="GJ Token" class="card-logo" />
+                        Mint GJ
+                    </h2>
+                </div>
+                <div class="card-content">
+                    <form id="mintForm">
+                        <div class="form-group">
+                            <label for="recipientAddress">Recipient Address:</label>
+                            <input type="text" id="recipientAddress" placeholder="0x..." required>
+                        </div>
+                        <p style="color: #ffd700; text-align: center; margin: 1rem 0;">
+                            <strong>Fee:</strong> 0.000666 ETH | <strong>Receive:</strong> 0.0666 GJ
+                        </p>
+                        <button type="button" id="mintButton" class="btn" disabled>Mint GJ Token</button>
+                    </form>
+                    <div id="status" class="status"></div>
+                </div>
+            </div>
+
+            <!-- Create Token Card -->
+            <div class="dex-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <span class="card-icon">⚡</span>
+                        Create Token
+                    </h2>
+                </div>
+                <div class="card-content">
+                    <p style="color: #ffd700; text-align: center; margin-bottom: 1rem; font-size: 0.9rem;">
+                        Cost: <strong>6 GJ tokens</strong>
+                    </p>
+                    <form id="createTokenForm">
+                        <div class="form-group">
+                            <label for="newTokenName">Token Name:</label>
+                            <input type="text" id="newTokenName" placeholder="My Token" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="newTokenSymbol">Token Symbol:</label>
+                            <input type="text" id="newTokenSymbol" placeholder="MTK" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="newTokenSupply">Initial Supply:</label>
+                            <input type="number" id="newTokenSupply" placeholder="1000000" required>
+                        </div>
+                        <button type="button" id="approveGJBtn" class="btn">Approve 6 GJ</button>
+                        <button type="submit" id="createTokenBtn" class="btn" style="display: none;">Create Token</button>
+                    </form>
+                    <div id="createTokenStatus" class="status"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

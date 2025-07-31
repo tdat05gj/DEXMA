@@ -1,3 +1,4 @@
+
 // dex.js - Clean DEX functionality with auto-calculation
 // This file handles all DEX operations including LP management, swaps, and charts
 
@@ -173,13 +174,101 @@ const dexAbi = [
 		],
 		"stateMutability": "view",
 		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "symbol",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "initialSupply",
+				"type": "uint256"
+			}
+		],
+		"name": "createToken",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "creator",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "tokenAddress",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "symbol",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "initialSupply",
+				"type": "uint256"
+			}
+		],
+		"name": "TokenCreated",
+		"type": "event"
 	}
 ];
 
 const dexAddress = "0x09b98f0a16f0BA62DcFf31A4650Ac8873a492CCF";
 
+// ====== WETH CONTRACT CONFIGURATION ======
+const wethAbi = [
+    {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"src","type":"address"},{"indexed":true,"internalType":"address","name":"guy","type":"address"},{"indexed":false,"internalType":"uint256","name":"wad","type":"uint256"}],"name":"Approval","type":"event"},
+    {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"dst","type":"address"},{"indexed":false,"internalType":"uint256","name":"wad","type":"uint256"}],"name":"Deposit","type":"event"},
+    {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"src","type":"address"},{"indexed":true,"internalType":"address","name":"dst","type":"address"},{"indexed":false,"internalType":"uint256","name":"wad","type":"uint256"}],"name":"Transfer","type":"event"},
+    {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"src","type":"address"},{"indexed":false,"internalType":"uint256","name":"wad","type":"uint256"}],"name":"Withdrawal","type":"event"},
+    {"payable":true,"stateMutability":"payable","type":"fallback"},
+    {"constant":true,"inputs":[{"internalType":"address","name":"","type":"address"},{"internalType":"address","name":"","type":"address"}],"name":"allowance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},
+    {"constant":false,"inputs":[{"internalType":"address","name":"guy","type":"address"},{"internalType":"uint256","name":"wad","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},
+    {"constant":true,"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},
+    {"constant":true,"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"payable":false,"stateMutability":"view","type":"function"},
+    {"constant":false,"inputs":[],"name":"deposit","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},
+    {"constant":true,"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},
+    {"constant":true,"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},
+    {"constant":true,"inputs":[],"name":"totalSupply","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},
+    {"constant":false,"inputs":[{"internalType":"address","name":"dst","type":"address"},{"internalType":"uint256","name":"wad","type":"uint256"}],"name":"transfer","outputs":[{"internalType":"bool","name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},
+    {"constant":false,"inputs":[{"internalType":"address","name":"src","type":"address"},{"internalType":"address","name":"dst","type":"address"},{"internalType":"uint256","name":"wad","type":"uint256"}],"name":"transferFrom","outputs":[{"internalType":"bool","name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},
+    {"constant":false,"inputs":[{"internalType":"uint256","name":"wad","type":"uint256"}],"name":"withdraw","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"}
+];
+
+const wethAddress = "0x6f898cd313dcEe4D28A87F675BD93C471868B0Ac";
+
 // ====== GLOBAL VARIABLES ======
-let provider, signer, dexContract;
+let provider, signer, dexContract, wethContract;
 let isInitialized = false;
 
 // ====== INITIALIZATION ======
@@ -193,7 +282,14 @@ async function initializeDEX() {
       
       if (dexAbi.length && dexAddress) {
         dexContract = new window.ethers.Contract(dexAddress, dexAbi, signer);
+        window.dexContract = dexContract; // Export globally for create token functionality
         console.log("✅ DEX contract initialized:", dexAddress);
+      }
+
+      if (wethAbi.length && wethAddress) {
+        wethContract = new window.ethers.Contract(wethAddress, wethAbi, signer);
+        window.wethContract = wethContract; // Export globally
+        console.log("✅ WETH contract initialized:", wethAddress);
       }
       
       isInitialized = true;
@@ -229,6 +325,284 @@ async function getTokenInfo(tokenAddress) {
     console.error("❌ Token info fetch failed:", error);
     return null;
   }
+}
+
+// ====== VERIFIED TOKEN LIST FUNCTIONALITY ======
+async function loadVerifiedTokens() {
+  const tokenListContainer = document.getElementById('verifiedTokenList');
+  const liveIndicator = document.getElementById('tokenListLiveIndicator');
+  
+  if (!tokenListContainer) {
+    console.error("❌ Token list container not found");
+    return;
+  }
+  
+  try {
+    console.log("🔍 Loading verified tokens...");
+    
+    if (!dexContract) {
+      console.log("⚠️ DEX contract not initialized, showing placeholder");
+      tokenListContainer.innerHTML = `
+        <div class="token-loading">DEX contract not available. Please connect wallet.</div>
+      `;
+      return;
+    }
+    
+    // Show live indicator
+    if (liveIndicator) {
+      liveIndicator.style.display = 'inline';
+    }
+    
+    // Get TokenCreated events from the DEX contract
+    console.log("📡 Fetching TokenCreated events...");
+    const filter = dexContract.filters.TokenCreated();
+    const events = await dexContract.queryFilter(filter, 0, "latest");
+    
+    console.log(`✅ Found ${events.length} token creation events`);
+    
+    let tokenHTML = '';
+    
+    // Always include GJ token at the top
+    const gjToken = {
+      address: '0x6B7ca0E7dDED09492ecC281d4Bf8C4c872C89c8E',
+      name: 'GJ Token',
+      symbol: 'GJ'
+    };
+    
+    tokenHTML += `
+      <div class="token-item gj-token">
+        <div class="token-header">
+          <div class="token-basic-info">
+            <div class="token-logo-placeholder">GJ</div>
+            <div class="token-name-symbol">
+              <span class="token-name">
+                ${gjToken.name}
+                <button class="star-btn active" onclick="toggleFavorite('${gjToken.address}')" title="Add to favorites">⭐</button>
+              </span>
+              <span class="token-symbol">${gjToken.symbol}</span>
+            </div>
+          </div>
+        </div>
+        <div class="token-details">
+          <div class="token-price-info">
+            <div class="token-price" id="price-${gjToken.address}">Price: --</div>
+          </div>
+          <div class="token-address-section">
+            <div class="token-address" title="${gjToken.address}">
+              Contract: ${gjToken.address}
+            </div>
+            <button class="copy-btn" onclick="copyToClipboard('${gjToken.address}')" title="Copy contract address">📋</button>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    // Process ALL created tokens (không filter theo creator)
+    const processedTokens = [];
+    for (const event of events) {
+      try {
+        const { creator, tokenAddress, name, symbol, initialSupply } = event.args;
+        
+        // Get additional token info
+        const tokenInfo = await getTokenInfo(tokenAddress);
+        if (tokenInfo) {
+          processedTokens.push({
+            address: tokenAddress,
+            name: name || tokenInfo.name,
+            symbol: symbol || tokenInfo.symbol,
+            creator: creator,
+            initialSupply: initialSupply,
+            blockNumber: event.blockNumber,
+            transactionHash: event.transactionHash
+          });
+        }
+      } catch (error) {
+        console.error("❌ Error processing token event:", error);
+      }
+    }
+    
+    // Sort by block number (newest first)
+    processedTokens.sort((a, b) => b.blockNumber - a.blockNumber);
+    
+    // Add created tokens to HTML
+    for (const token of processedTokens) {
+      tokenHTML += `
+        <div class="token-item">
+          <div class="token-header">
+            <div class="token-basic-info">
+              <div class="token-logo-placeholder">${token.symbol.charAt(0)}</div>
+              <div class="token-name-symbol">
+                <span class="token-name">${token.name}</span>
+                <span class="token-symbol">${token.symbol}</span>
+              </div>
+            </div>
+          </div>
+          <div class="token-details">
+            <div class="token-price-info">
+              <div class="token-price" id="price-${token.address}">Price: --</div>
+            </div>
+            <div class="token-address-section">
+              <div class="token-address" title="${token.address}">
+                Contract: ${token.address}
+              </div>
+              <button class="copy-btn" onclick="copyToClipboard('${token.address}')" title="Copy contract address">📋</button>
+            </div>
+            <div class="token-creator" title="${token.creator}">
+              Created by: ${token.creator.slice(0, 10)}...${token.creator.slice(-8)}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    // If no tokens found, show empty state
+    if (processedTokens.length === 0) {
+      // Không hiển thị thông báo gì
+    }
+    
+    tokenListContainer.innerHTML = tokenHTML;
+    console.log("✅ Token list updated successfully");
+    
+    // Load real-time prices for all tokens (GJ + filtered tokens)
+    const allTokenAddresses = [gjToken.address];
+    if (processedTokens.length > 0) {
+      allTokenAddresses.push(...processedTokens.map(t => t.address));
+    }
+    await loadTokenPrices(allTokenAddresses);
+    
+  } catch (error) {
+    console.error("❌ Error loading verified tokens:", error);
+    tokenListContainer.innerHTML = `
+      <div class="token-error">
+        <p>Error loading tokens: ${error.message}</p>
+        <button onclick="window.loadVerifiedTokens()" class="retry-btn">Retry</button>
+      </div>
+    `;
+  }
+}
+
+// ====== TOKEN UTILITIES ======
+async function loadTokenPrices(tokenAddresses) {
+  console.log("💰 Loading token prices...");
+  
+  for (const tokenAddress of tokenAddresses) {
+    try {
+      const price = await getTokenPrice(tokenAddress);
+      const priceElement = document.getElementById(`price-${tokenAddress}`);
+      if (priceElement) {
+        if (price && price !== "0") {
+          priceElement.textContent = `Price: ${parseFloat(price).toFixed(6)} ETH`;
+          priceElement.style.color = "#4ade80"; // Green for available price
+        } else {
+          priceElement.textContent = "Price: No liquidity";
+          priceElement.style.color = "#f87171"; // Red for no liquidity
+        }
+      }
+    } catch (error) {
+      console.error(`❌ Error loading price for ${tokenAddress}:`, error);
+      const priceElement = document.getElementById(`price-${tokenAddress}`);
+      if (priceElement) {
+        priceElement.textContent = "Price: Error";
+        priceElement.style.color = "#f87171";
+      }
+    }
+  }
+}
+
+async function getTokenPrice(tokenAddress) {
+  if (!dexContract || !window.ethers.utils.isAddress(tokenAddress)) return "0";
+  
+  try {
+    const [tokenReserve, ethReserve] = await dexContract.getReserves(tokenAddress);
+    
+    if (tokenReserve.eq(0) || ethReserve.eq(0)) {
+      return "0"; // No liquidity
+    }
+    
+    // Price = ETH reserve / Token reserve
+    const priceWei = ethReserve.mul(window.ethers.utils.parseEther("1")).div(tokenReserve);
+    return window.ethers.utils.formatEther(priceWei);
+  } catch (error) {
+    console.error("❌ Price calculation failed:", error);
+    return "0";
+  }
+}
+
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    console.log("📋 Address copied to clipboard:", text);
+    showToast("Contract address copied!", "success");
+  }).catch(err => {
+    console.error("❌ Failed to copy:", err);
+    showToast("Failed to copy address", "error");
+  });
+}
+
+function toggleFavorite(tokenAddress) {
+  const starBtn = event.target;
+  const isActive = starBtn.classList.contains('active');
+  
+  if (isActive) {
+    starBtn.classList.remove('active');
+    removeFavorite(tokenAddress);
+    showToast("Removed from favorites", "info");
+  } else {
+    starBtn.classList.add('active');
+    addFavorite(tokenAddress);
+    showToast("Added to favorites", "success");
+  }
+}
+
+function addFavorite(tokenAddress) {
+  let favorites = JSON.parse(localStorage.getItem('favoriteTokens') || '[]');
+  if (!favorites.includes(tokenAddress)) {
+    favorites.push(tokenAddress);
+    localStorage.setItem('favoriteTokens', JSON.stringify(favorites));
+  }
+}
+
+function removeFavorite(tokenAddress) {
+  let favorites = JSON.parse(localStorage.getItem('favoriteTokens') || '[]');
+  favorites = favorites.filter(addr => addr !== tokenAddress);
+  localStorage.setItem('favoriteTokens', JSON.stringify(favorites));
+}
+
+function showToast(message, type = 'info') {
+  // Create toast element
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.textContent = message;
+  
+  // Style the toast
+  toast.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    z-index: 10000;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+  `;
+  
+  document.body.appendChild(toast);
+  
+  // Animate in
+  setTimeout(() => {
+    toast.style.transform = 'translateX(0)';
+  }, 100);
+  
+  // Remove after 3 seconds
+  setTimeout(() => {
+    toast.style.transform = 'translateX(100%)';
+    setTimeout(() => {
+      document.body.removeChild(toast);
+    }, 300);
+  }, 3000);
 }
 
 async function checkPoolExists(tokenAddress) {
@@ -380,22 +754,46 @@ function setupSwapTokenInfo() {
   
   if (!tokenAddressInput) return;
   
+  // Function to update direction options
+  const updateDirectionOptions = (tokenName) => {
+    const directionSelect = document.getElementById("swapDirection");
+    if (directionSelect) {
+      const currentValue = directionSelect.value;
+      directionSelect.innerHTML = `
+        <option value="ethToToken">ETH → ${tokenName}</option>
+        <option value="tokenToEth">${tokenName} → ETH</option>
+      `;
+      directionSelect.value = currentValue; // Preserve selected value
+    }
+  };
+  
+  // Initialize with default token name
+  updateDirectionOptions("Token");
+  
   const handleSwapTokenChange = debounce(async (tokenAddress) => {
     if (tokenInfoDiv) tokenInfoDiv.innerHTML = "";
     if (swapPreview) swapPreview.innerHTML = "";
     
-    if (!window.ethers.utils.isAddress(tokenAddress)) return;
+    if (!window.ethers.utils.isAddress(tokenAddress)) {
+      // Reset direction options to default
+      updateDirectionOptions("Token");
+      return;
+    }
     
     try {
       const tokenInfo = await getTokenInfo(tokenAddress);
       if (tokenInfo && tokenInfoDiv) {
         tokenInfoDiv.innerHTML = `<span class="token-name">${tokenInfo.name} (${tokenInfo.symbol})</span>`;
         
+        // Update direction options with token name
+        updateDirectionOptions(tokenInfo.name);
+        
         // Update swap preview and trigger calculation
         updateSwapPreview();
       }
     } catch (error) {
       console.error("❌ Swap token info error:", error);
+      updateDirectionOptions("Token");
     }
   }, 500);
   
@@ -468,14 +866,38 @@ function setupSwapAutoCalculation() {
   
   if (!amountInput || !directionSelect || !tokenAddressInput) return;
   
-  // Update label based on direction
-  const updateLabel = () => {
+  // Update label based on direction and token info
+  const updateLabel = async () => {
     const direction = directionSelect.value;
+    const tokenAddress = tokenAddressInput.value.trim();
+    
+    let tokenName = "Token";
+    if (window.ethers.utils.isAddress(tokenAddress)) {
+      try {
+        const tokenInfo = await getTokenInfo(tokenAddress);
+        if (tokenInfo && tokenInfo.name) {
+          tokenName = tokenInfo.name;
+        }
+      } catch (error) {
+        console.error("Error getting token info:", error);
+      }
+    }
+    
+    // Update direction options with token name
+    if (directionSelect) {
+      const currentValue = directionSelect.value;
+      directionSelect.innerHTML = `
+        <option value="ethToToken">ETH → ${tokenName}</option>
+        <option value="tokenToEth">${tokenName} → ETH</option>
+      `;
+      directionSelect.value = currentValue; // Preserve selected value
+    }
+    
     if (amountLabel) {
-      amountLabel.textContent = direction === "ethToToken" ? "ETH Amount:" : "Token Amount:";
+      amountLabel.textContent = direction === "ethToToken" ? "ETH Amount:" : `${tokenName} Amount:`;
     }
     if (amountHint) {
-      amountHint.textContent = direction === "ethToToken" ? "Enter ETH amount to buy tokens" : "Enter token amount to sell for ETH";
+      amountHint.textContent = direction === "ethToToken" ? `Enter ETH amount to buy ${tokenName}` : `Enter ${tokenName} amount to sell for ETH`;
     }
     // Clear amount when direction changes
     amountInput.value = "";
@@ -503,7 +925,10 @@ function setupSwapAutoCalculation() {
     updateLabel();
     updateCalculation();
   });
-  tokenAddressInput.addEventListener("input", updateCalculation);
+  tokenAddressInput.addEventListener("input", () => {
+    updateLabel(); // Update label when token changes
+    updateCalculation();
+  });
 }
 
 async function updateSwapPreview(calculation = null) {
@@ -1188,15 +1613,150 @@ window.addEventListener("DOMContentLoaded", async () => {
   setupLPForm();
   setupSwapForm();
   setupChartForm();
+  setupWETHFunctionality();
   
   // Load pools
   if (window.ethereum && window.ethereum.selectedAddress) {
     await renderMyPools();
+    await updateWETHBalances();
   }
+  
+  // Load verified tokens
+  await loadVerifiedTokens();
+  
+  // Set up periodic token list updates (every 15 seconds)
+  setInterval(async () => {
+    if (dexContract) {
+      await loadVerifiedTokens();
+    }
+  }, 15000);
   
   console.log("✅ DEX initialization complete!");
 });
 
+// ====== WETH FUNCTIONALITY ======
+async function updateWETHBalances() {
+  if (!wethContract || !provider) return;
+  
+  try {
+    const userAddress = await signer.getAddress();
+    const wethBalance = await wethContract.balanceOf(userAddress);
+    const ethBalance = await provider.getBalance(userAddress);
+    
+    document.getElementById('wethBalance').textContent = `${ethers.utils.formatEther(wethBalance)} WETH`;
+    document.getElementById('wethEthBalance').textContent = `${ethers.utils.formatEther(ethBalance)} ETH`;
+  } catch (error) {
+    console.error("Error updating WETH balances:", error);
+  }
+}
+
+function setupWETHFunctionality() {
+  const wrapTab = document.getElementById('wrapTab');
+  const unwrapTab = document.getElementById('unwrapTab');
+  const wrapForm = document.getElementById('wrapForm');
+  const wrapAmountLabel = document.getElementById('wrapAmountLabel');
+  const wrapAmountHint = document.getElementById('wrapAmountHint');
+  const wrapSubmitBtn = document.getElementById('wrapSubmitBtn');
+  
+  let isWrapMode = true;
+  
+  // Tab switching
+  wrapTab.addEventListener('click', () => {
+    isWrapMode = true;
+    wrapTab.classList.add('active');
+    unwrapTab.classList.remove('active');
+    wrapTab.style.background = '#333';
+    wrapTab.style.color = 'white';
+    unwrapTab.style.background = '#222';
+    unwrapTab.style.color = '#888';
+    
+    wrapAmountLabel.textContent = 'ETH Amount to Wrap:';
+    wrapAmountHint.textContent = 'Enter amount to wrap into WETH';
+    wrapSubmitBtn.textContent = 'Wrap ETH';
+  });
+  
+  unwrapTab.addEventListener('click', () => {
+    isWrapMode = false;
+    unwrapTab.classList.add('active');
+    wrapTab.classList.remove('active');
+    unwrapTab.style.background = '#333';
+    unwrapTab.style.color = 'white';
+    wrapTab.style.background = '#222';
+    wrapTab.style.color = '#888';
+    
+    wrapAmountLabel.textContent = 'WETH Amount to Unwrap:';
+    wrapAmountHint.textContent = 'Enter amount to unwrap into ETH';
+    wrapSubmitBtn.textContent = 'Unwrap WETH';
+  });
+  
+  // Form submission
+  wrapForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const amount = document.getElementById('wrapAmount').value;
+    const statusDiv = document.getElementById('wrapStatus');
+    
+    if (!amount || amount <= 0) {
+      statusDiv.innerHTML = '<div class="error">Please enter a valid amount</div>';
+      return;
+    }
+    
+    try {
+      statusDiv.innerHTML = '<div class="loading">Processing transaction...</div>';
+      
+      if (isWrapMode) {
+        // Wrap ETH to WETH
+        const amountWei = ethers.utils.parseEther(amount);
+        const tx = await wethContract.deposit({ value: amountWei });
+        
+        statusDiv.innerHTML = '<div class="loading">Wrapping ETH... Please wait for confirmation.</div>';
+        await tx.wait();
+        
+        statusDiv.innerHTML = `<div class="success">Successfully wrapped ${amount} ETH to WETH!</div>`;
+      } else {
+        // Unwrap WETH to ETH
+        const amountWei = ethers.utils.parseEther(amount);
+        const tx = await wethContract.withdraw(amountWei);
+        
+        statusDiv.innerHTML = '<div class="loading">Unwrapping WETH... Please wait for confirmation.</div>';
+        await tx.wait();
+        
+        statusDiv.innerHTML = `<div class="success">Successfully unwrapped ${amount} WETH to ETH!</div>`;
+      }
+      
+      // Clear form and update balances
+      document.getElementById('wrapAmount').value = '';
+      await updateWETHBalances();
+      
+      // Clear status after 5 seconds
+      setTimeout(() => {
+        statusDiv.innerHTML = '';
+      }, 5000);
+      
+    } catch (error) {
+      console.error('WETH operation error:', error);
+      let errorMessage = 'Transaction failed';
+      
+      if (error.code === 4001) {
+        errorMessage = 'Transaction cancelled by user';
+      } else if (error.reason) {
+        errorMessage = error.reason;
+      } else if (error.message.includes('insufficient funds')) {
+        errorMessage = 'Insufficient balance';
+      }
+      
+      statusDiv.innerHTML = `<div class="error">${errorMessage}</div>`;
+    }
+  });
+}
+
 // ====== GLOBAL EXPORTS ======
 window.renderMyPools = renderMyPools;
 window.initializeDEX = initializeDEX;
+window.dexContract = dexContract;
+window.wethContract = wethContract;
+window.loadVerifiedTokens = loadVerifiedTokens;
+window.copyToClipboard = copyToClipboard;
+window.toggleFavorite = toggleFavorite;
+window.updateWETHBalances = updateWETHBalances;
+window.setupWETHFunctionality = setupWETHFunctionality;

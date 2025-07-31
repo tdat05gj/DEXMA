@@ -35,7 +35,9 @@ function initializeApp() {
         "function mint(address to) public payable",
         "function balanceOf(address owner) public view returns (uint256)",
         "function name() public view returns (string)",
-        "function decimals() public view returns (uint8)"
+        "function decimals() public view returns (uint8)",
+        "function approve(address spender, uint256 amount) public returns (bool)",
+        "function allowance(address owner, address spender) public view returns (uint256)"
     ];
 
     // Debug: Check if connect button exists
@@ -391,6 +393,11 @@ function initializeApp() {
                 } else {
                     console.log("renderMyPools function not available");
                 }
+                
+                // Update WETH balances if function is available
+                if (typeof window.updateWETHBalances === 'function') {
+                    await window.updateWETHBalances();
+                }
             } catch (error) {
                 console.error("Balance update error:", error);
                 // Show connect button if there's an error
@@ -481,5 +488,138 @@ function initializeApp() {
                 }
             }
         });
+    }
+    
+    // Setup Create Token functionality
+    setupCreateTokenFunctionality();
+    
+    // Function to handle create token functionality
+    function setupCreateTokenFunctionality() {
+        const approveBtn = document.getElementById('approveGJBtn');
+        const createBtn = document.getElementById('createTokenBtn');
+        const createTokenForm = document.getElementById('createTokenForm');
+        const createTokenStatus = document.getElementById('createTokenStatus');
+        
+        function showCreateTokenStatus(message, type = '') {
+            if (createTokenStatus) {
+                createTokenStatus.textContent = message;
+                createTokenStatus.className = `status ${type}`;
+            }
+        }
+        
+        if (approveBtn) {
+            approveBtn.addEventListener('click', async () => {
+                console.log('Approve 6 GJ button clicked');
+                
+                if (!contract || !signer) {
+                    showCreateTokenStatus('Please connect your wallet first!', 'error');
+                    return;
+                }
+                
+                try {
+                    // Check GJ balance first
+                    const balance = await contract.balanceOf(userAddress);
+                    const balanceInGJ = parseFloat(ethers.utils.formatEther(balance));
+                    const requiredGJ = 6;
+                    
+                    console.log(`Current GJ balance: ${balanceInGJ}, Required: ${requiredGJ}`);
+                    
+                    if (balanceInGJ < requiredGJ) {
+                        showCreateTokenStatus(`Insufficient GJ balance! You need ${requiredGJ} GJ but have ${balanceInGJ.toFixed(4)} GJ`, 'error');
+                        return;
+                    }
+                    
+                    // Get DEX contract address
+                    const dexAddress = window.dexContract?.address || '0x09b98f0a16f0BA62DcFf31A4650Ac8873a492CCF';
+                    console.log('DEX contract address:', dexAddress);
+                    
+                    showCreateTokenStatus('Approving 6 GJ for token creation...', '');
+                    approveBtn.disabled = true;
+                    
+                    // Approve 6 GJ to DEX contract
+                    const approveAmount = ethers.utils.parseEther('6');
+                    const approveTx = await contract.approve(dexAddress, approveAmount);
+                    
+                    showCreateTokenStatus('Approval transaction submitted, waiting for confirmation...', '');
+                    await approveTx.wait();
+                    
+                    showCreateTokenStatus('6 GJ approved successfully! You can now create the token.', 'success');
+                    
+                    // Hide approve button and show create button
+                    approveBtn.style.display = 'none';
+                    createBtn.style.display = 'block';
+                    
+                } catch (error) {
+                    console.error('Approve error:', error);
+                    let errorMsg = error.message;
+                    if (error.code === 4001) {
+                        errorMsg = 'Transaction was rejected by user.';
+                    }
+                    showCreateTokenStatus(`Approve failed: ${errorMsg}`, 'error');
+                } finally {
+                    approveBtn.disabled = false;
+                }
+            });
+        }
+        
+        if (createTokenForm) {
+            createTokenForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                console.log('Create token form submitted');
+                
+                if (!window.dexContract || !signer) {
+                    showCreateTokenStatus('DEX contract not available. Please connect wallet and try again.', 'error');
+                    return;
+                }
+                
+                const tokenName = document.getElementById('newTokenName').value.trim();
+                const tokenSymbol = document.getElementById('newTokenSymbol').value.trim();
+                const tokenSupply = document.getElementById('newTokenSupply').value.trim();
+                
+                if (!tokenName || !tokenSymbol || !tokenSupply) {
+                    showCreateTokenStatus('Please fill in all fields!', 'error');
+                    return;
+                }
+                
+                try {
+                    showCreateTokenStatus('Creating token...', '');
+                    createBtn.disabled = true;
+                    
+                    const supplyInWei = ethers.utils.parseEther(tokenSupply);
+                    const createTx = await window.dexContract.createToken(tokenName, tokenSymbol, supplyInWei);
+                    
+                    showCreateTokenStatus('Token creation transaction submitted, waiting for confirmation...', '');
+                    const receipt = await createTx.wait();
+                    
+                    showCreateTokenStatus(`Token '${tokenName}' (${tokenSymbol}) created successfully!`, 'success');
+                    
+                    // Reset form and buttons
+                    createTokenForm.reset();
+                    approveBtn.style.display = 'block';
+                    createBtn.style.display = 'none';
+                    
+                    // Update balance and token list
+                    await updateBalance();
+                    if (typeof window.loadVerifiedTokens === 'function') {
+                        await window.loadVerifiedTokens();
+                    }
+                    
+                } catch (error) {
+                    console.error('Create token error:', error);
+                    let errorMsg = error.message;
+                    if (error.code === 4001) {
+                        errorMsg = 'Transaction was rejected by user.';
+                    } else if (error.message.includes('insufficient allowance')) {
+                        errorMsg = 'Insufficient allowance. Please approve 6 GJ first.';
+                        // Reset buttons
+                        approveBtn.style.display = 'block';
+                        createBtn.style.display = 'none';
+                    }
+                    showCreateTokenStatus(`Token creation failed: ${errorMsg}`, 'error');
+                } finally {
+                    createBtn.disabled = false;
+                }
+            });
+        }
     }
 }

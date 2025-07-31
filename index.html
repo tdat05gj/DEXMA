@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="styles.css">
      <link rel="icon" type="image/x-icon" href="./gj.jpg">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <script src="app.js"></script>
     <script src="dex.js"></script>
 </head>
@@ -111,6 +111,22 @@
                 <div class="card-content">
                     <div id="myPools">
                         <div class="chart-loading">Connect wallet to view your pools</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Verified Token List Card -->
+            <div class="dex-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <span class="card-icon">✅</span>
+                        Verified Token List
+                        <span id="tokenListLiveIndicator" class="live-indicator" title="Real-time updates active" style="display: none;">🟢 LIVE</span>
+                    </h2>
+                </div>
+                <div class="card-content">
+                    <div id="verifiedTokenList">
+                        <div class="token-loading">Loading verified tokens...</div>
                     </div>
                 </div>
             </div>

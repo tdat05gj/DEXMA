@@ -63,16 +63,68 @@ function initializeApp() {
             console.log(`Status: ${message} (${type})`);
         }
     }
-    
+
+    // ====== REAL-TIME BALANCE UPDATES ======
+    let balanceUpdateInterval = null;
+
+    // Function to start real-time balance updates
+    function startRealTimeBalanceUpdates() {
+        // Clear any existing interval
+        if (balanceUpdateInterval) {
+            clearInterval(balanceUpdateInterval);
+        }
+
+        // Update balances every 10 seconds
+        balanceUpdateInterval = setInterval(async () => {
+            if (userAddress && provider) {
+                console.log("🔄 Real-time balance update...");
+                await updateWalletUI();
+                
+                // Flash the live indicator on update
+                const liveIndicator = document.getElementById('liveIndicator');
+                if (liveIndicator) {
+                    liveIndicator.style.transform = 'scale(1.1)';
+                    setTimeout(() => {
+                        liveIndicator.style.transform = 'scale(1)';
+                    }, 300);
+                }
+            }
+        }, 10000); // 10 seconds
+
+        // Show live indicator
+        const liveIndicator = document.getElementById('liveIndicator');
+        if (liveIndicator) {
+            liveIndicator.style.display = 'block';
+        }
+
+        console.log("✅ Real-time balance updates started (every 10 seconds)");
+    }
+
+    // Function to stop real-time balance updates
+    function stopRealTimeBalanceUpdates() {
+        if (balanceUpdateInterval) {
+            clearInterval(balanceUpdateInterval);
+            balanceUpdateInterval = null;
+            console.log("⏹️ Real-time balance updates stopped");
+        }
+        
+        // Hide live indicator
+        const liveIndicator = document.getElementById('liveIndicator');
+        if (liveIndicator) {
+            liveIndicator.style.display = 'none';
+        }
+    }
+
     // Check if wallet is already connected
     checkWalletConnection();
-    
+
     // Listen for account changes
     if (window.ethereum) {
         window.ethereum.on('accountsChanged', async (accounts) => {
             console.log("Account changed:", accounts);
             if (accounts.length === 0) {
                 // User disconnected wallet
+                stopRealTimeBalanceUpdates();
                 userAddress = null;
                 provider = null;
                 signer = null;
@@ -94,6 +146,7 @@ function initializeApp() {
         
         window.ethereum.on('disconnect', async () => {
             console.log("Wallet disconnected");
+            stopRealTimeBalanceUpdates();
             userAddress = null;
             provider = null;
             signer = null;
@@ -222,6 +275,9 @@ function initializeApp() {
             if (recipientInput) {
                 recipientInput.value = userAddress;
             }
+            
+            // Start real-time balance updates
+            startRealTimeBalanceUpdates();
         } catch (error) {
             console.error("Connection error:", error);
             showStatus(`Connection error: ${error.message}`, "error");
@@ -325,6 +381,9 @@ function initializeApp() {
                     
                     showStatus("Wallet reconnected successfully!", "success");
                     console.log("Auto-reconnection completed successfully");
+                    
+                    // Start real-time balance updates
+                    startRealTimeBalanceUpdates();
                 } else {
                     console.log("No accounts found, clearing connection state");
                     localStorage.removeItem('walletConnected');
@@ -481,4 +540,9 @@ function initializeApp() {
             }
         });
     }
+
+    // Clean up on page unload
+    window.addEventListener('beforeunload', () => {
+        stopRealTimeBalanceUpdates();
+    });
 }

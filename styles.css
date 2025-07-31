@@ -12,6 +12,15 @@ body {
     background: #0a0a0a;
     color: #ffd700;
     overflow-x: hidden;
+    /* Optimize performance */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
+
+/* Smooth transitions for all elements */
+* {
+    transition: opacity 0.2s ease, transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
 }
 
 /* Header */
@@ -26,6 +35,8 @@ header {
     position: sticky;
     top: 0;
     z-index: 100;
+    /* Optimize repaints */
+    will-change: transform;
 }
 
 header h1 {
@@ -48,6 +59,8 @@ header h1 {
     object-fit: cover;
     box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
     transition: all 0.3s ease;
+    /* Hardware acceleration */
+    transform: translateZ(0);
 }
 
 .logo:hover {
@@ -138,6 +151,37 @@ header h1 {
 @keyframes pulse {
     0%, 100% { opacity: 0.6; }
     50% { opacity: 1; }
+}
+
+/* Live Indicator */
+.live-indicator {
+    padding: 0.4rem 0.8rem;
+    background: rgba(220, 38, 127, 0.2);
+    border-radius: 8px;
+    border: 1px solid rgba(220, 38, 127, 0.4);
+    font-weight: 700;
+    font-family: 'Courier New', monospace;
+    font-size: 0.7rem;
+    color: #dc267f;
+    text-shadow: 0 0 8px rgba(220, 38, 127, 0.4);
+    backdrop-filter: blur(5px);
+    animation: liveGlow 2s ease-in-out infinite;
+    white-space: nowrap;
+    text-align: center;
+    cursor: help;
+    transition: all 0.3s ease;
+    display: none;
+}
+
+@keyframes liveGlow {
+    0%, 100% { 
+        box-shadow: 0 0 8px rgba(220, 38, 127, 0.3);
+        background: rgba(220, 38, 127, 0.2);
+    }
+    50% { 
+        box-shadow: 0 0 15px rgba(220, 38, 127, 0.6);
+        background: rgba(220, 38, 127, 0.3);
+    }
 }
 
 /* Main Container */
@@ -249,13 +293,34 @@ main {
     border-radius: 10px;
     color: #fff;
     font-size: 0.95rem;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     outline: none;
+    /* Improve input performance */
+    will-change: border-color, box-shadow;
+}
+
+.form-group select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='%23ffd700' viewBox='0 0 16 16'%3e%3cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 16px 12px;
+    padding-right: 2.5rem;
+}
+
+.form-group select option {
+    background: #1a1a1a;
+    color: #fff;
+    border: none;
+    padding: 0.5rem;
 }
 
 .form-group input:focus, .form-group select:focus {
     border-color: #ffd700;
     box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
+    /* Scale up slightly on focus */
+    transform: scale(1.01);
 }
 
 .form-group input[readonly] {
@@ -326,11 +391,17 @@ main {
     font-weight: 600;
     font-size: 0.95rem;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     width: 100%;
     margin-top: 1rem;
     position: relative;
     overflow: hidden;
+    /* Hardware acceleration for smoother animations */
+    will-change: transform;
+    transform: translateZ(0);
+    /* Prevent text selection */
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .btn::before {
@@ -342,6 +413,7 @@ main {
     height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
     transition: left 0.5s ease;
+    pointer-events: none;
 }
 
 .btn:hover::before {
@@ -349,8 +421,13 @@ main {
 }
 
 .btn:hover:enabled {
-    transform: translateY(-2px);
+    transform: translateY(-2px) translateZ(0);
     box-shadow: 0 8px 25px rgba(255, 215, 0, 0.4);
+}
+
+.btn:active:enabled {
+    transform: translateY(0) translateZ(0);
+    transition: transform 0.1s ease;
 }
 
 .btn:disabled {
@@ -372,18 +449,90 @@ main {
     display: flex;
     align-items: center;
     justify-content: center;
+    /* Smooth transitions */
+    opacity: 1;
+    transition: opacity 0.3s ease, transform 0.2s ease;
+    /* Hardware acceleration */
+    transform: translateZ(0);
 }
 
 .status.success {
     background: rgba(40, 167, 69, 0.2);
     color: #28a745;
     border: 1px solid rgba(40, 167, 69, 0.3);
+    animation: statusPulse 0.5s ease-out;
 }
 
 .status.error {
     background: rgba(220, 53, 69, 0.2);
     color: #dc3545;
     border: 1px solid rgba(220, 53, 69, 0.3);
+    animation: statusShake 0.5s ease-out;
+}
+
+/* Status animations */
+@keyframes statusPulse {
+    0% {
+        transform: scale(0.95);
+        opacity: 0.7;
+    }
+    50% {
+        transform: scale(1.02);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes statusShake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+    25% {
+        transform: translateX(-5px);
+    }
+    75% {
+        transform: translateX(5px);
+    }
+}
+
+/* Loading Spinner */
+.loading-spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 215, 0, 0.3);
+    border-radius: 50%;
+    border-top-color: #ffd700;
+    animation: spin 1s linear infinite;
+    margin-right: 0.5rem;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Button loading state */
+.btn.loading {
+    position: relative;
+    pointer-events: none;
+}
+
+.btn.loading::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(0, 0, 0, 0.3);
+    border-radius: 50%;
+    border-top-color: #000;
+    animation: spin 1s linear infinite;
+    transform: translate(-50%, -50%);
 }
 
 /* Chart Styles */
@@ -432,6 +581,78 @@ main {
     border: 1px solid rgba(220, 53, 69, 0.3);
     text-align: center;
     padding: 1rem;
+}
+
+/* Chart Header & Controls */
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+}
+
+.chart-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--primary-color);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.chart-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.timeframe-selector {
+    display: flex;
+    gap: 0.25rem;
+    background: rgba(255, 215, 0, 0.05);
+    padding: 0.25rem;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 215, 0, 0.1);
+}
+
+.timeframe-btn {
+    padding: 0.5rem 0.75rem;
+    border: none;
+    background: transparent;
+    color: rgba(255, 215, 0, 0.7);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateZ(0);
+    will-change: background-color, color, transform;
+}
+
+.timeframe-btn:hover {
+    background: rgba(255, 215, 0, 0.1);
+    color: var(--primary-color);
+    transform: translateY(-1px) translateZ(0);
+}
+
+.timeframe-btn.active {
+    background: var(--primary-color);
+    color: var(--background-color);
+    box-shadow: 0 2px 4px rgba(255, 215, 0, 0.2);
+    transform: translateZ(0);
+}
+
+.timeframe-btn.active:hover {
+    transform: translateY(-1px) translateZ(0);
+    box-shadow: 0 4px 8px rgba(255, 215, 0, 0.3);
+}
+
+#enhancedChart {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 /* Pool Table */
@@ -700,4 +921,432 @@ main {
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+/* Chart Error Styles */
+.chart-error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 300px;
+    background: #0a0a0a;
+    border-radius: 8px;
+    color: #999;
+    text-align: center;
+    padding: 2rem;
+}
+
+.chart-error > div {
+    max-width: 300px;
+}
+
+.chart-container {
+    margin-top: 1rem;
+}
+
+#tvChart {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+/* Token List Styles */
+.token-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.token-item {
+    background: rgba(20, 20, 20, 0.6);
+    border: 1px solid rgba(255, 215, 0, 0.2);
+    border-radius: 12px;
+    padding: 1rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.token-item:hover {
+    border-color: rgba(255, 215, 0, 0.4);
+    background: rgba(20, 20, 20, 0.8);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.1);
+}
+
+.token-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.token-name {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #ffd700;
+}
+
+.token-symbol {
+    background: rgba(255, 215, 0, 0.2);
+    color: #ffd700;
+    padding: 0.2rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.token-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    margin-bottom: 0.8rem;
+}
+
+.token-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+
+.token-stat-label {
+    font-size: 0.75rem;
+    color: #888;
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+.token-stat-value {
+    font-size: 0.9rem;
+    color: #fff;
+    font-weight: 600;
+    font-family: 'Courier New', monospace;
+}
+
+.token-stat-value:has-text("$") {
+    color: #28a745;
+    font-weight: 700;
+}
+
+.token-stat-label:contains("Price USDT") + .token-stat-value {
+    color: #28a745;
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+
+.token-contract {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(10, 10, 10, 0.5);
+    padding: 0.6rem;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 215, 0, 0.1);
+}
+
+.token-address {
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    color: #aaa;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.copy-btn {
+    background: rgba(255, 215, 0, 0.2);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    color: #ffd700;
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 600;
+    white-space: nowrap;
+    min-width: 100px;
+    text-align: center;
+}
+
+.copy-btn:hover {
+    background: rgba(255, 215, 0, 0.3);
+    border-color: rgba(255, 215, 0, 0.5);
+    transform: scale(1.05);
+}
+
+.copy-btn.copied {
+    background: rgba(40, 167, 69, 0.3);
+    border-color: rgba(40, 167, 69, 0.5);
+    color: #28a745;
+}
+
+.no-tokens {
+    text-align: center;
+    color: #888;
+    padding: 2rem;
+    font-style: italic;
+}
+
+.high-lp-badge {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    padding: 0.2rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+    animation: glowPulse 2s ease-in-out infinite;
+}
+
+.real-data-badge {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+    padding: 0.2rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
+    margin-left: 0.5rem;
+}
+
+.gj-badge {
+    background: linear-gradient(135deg, #ffd700, #ffb347);
+    color: #1a1a1a;
+    padding: 0.2rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(255, 215, 0, 0.4);
+    margin-left: 0.5rem;
+}
+
+.token-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.live-update-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.75rem;
+    color: #28a745;
+    font-weight: 600;
+}
+
+.live-update-indicator::before {
+    content: "🔴";
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.token-item.has-real-lp {
+    border-color: rgba(0, 123, 255, 0.4);
+    background: rgba(0, 123, 255, 0.05);
+}
+
+.token-item.gj-token {
+    border-color: rgba(255, 215, 0, 0.6);
+    background: rgba(255, 215, 0, 0.1);
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.2);
+}
+
+.token-item.gj-token .token-name {
+    color: #ffd700;
+    font-weight: 800;
+}
+
+.token-item.gj-token .token-symbol {
+    background: rgba(255, 215, 0, 0.3);
+    color: #ffd700;
+    font-weight: 700;
+}
+
+.price-usdt {
+    color: #28a745 !important;
+    font-weight: 700 !important;
+    font-size: 0.95rem !important;
+}
+
+@keyframes glowPulse {
+    0%, 100% { 
+        box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+    }
+    50% { 
+        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.6);
+    }
+}
+
+/* Verified Token List Styles */
+.token-loading {
+    text-align: center;
+    padding: 2rem;
+    color: #888;
+    font-style: italic;
+}
+
+.token-item {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 215, 0, 0.2);
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 0.8rem;
+    transition: all 0.3s ease;
+}
+
+.token-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 215, 0, 0.4);
+    transform: translateY(-2px);
+}
+
+.token-item.gj-token {
+    border-color: rgba(255, 215, 0, 0.6);
+    background: rgba(255, 215, 0, 0.1);
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.2);
+}
+
+.token-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.8rem;
+}
+
+.token-name-section {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.token-name {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #ffd700;
+}
+
+.token-name.gj-token {
+    color: #ffd700;
+    font-weight: 800;
+}
+
+.token-symbol {
+    background: rgba(255, 215, 0, 0.2);
+    color: #ffd700;
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.verified-badge {
+    background: linear-gradient(135deg, #ffd700, #ffed4e);
+    color: #000;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+}
+
+.token-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.8rem;
+    margin-bottom: 0.8rem;
+}
+
+.token-stat {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 0.6rem;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 215, 0, 0.1);
+}
+
+.token-stat-label {
+    font-size: 0.8rem;
+    color: #888;
+    margin-bottom: 0.2rem;
+}
+
+.token-stat-value {
+    font-weight: 600;
+    color: #ffd700;
+    font-size: 0.9rem;
+}
+
+.price-usdt {
+    color: #28a745 !important;
+    font-weight: 700 !important;
+    font-size: 0.95rem !important;
+}
+
+.token-contract {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(10, 10, 10, 0.5);
+    padding: 0.6rem;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 215, 0, 0.1);
+}
+
+.token-address {
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    color: #aaa;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.copy-btn {
+    background: rgba(255, 215, 0, 0.2);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    color: #ffd700;
+    padding: 0.3rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 600;
+}
+
+.copy-btn:hover {
+    background: rgba(255, 215, 0, 0.3);
+    border-color: rgba(255, 215, 0, 0.5);
+}
+
+.copy-btn:active {
+    background: rgba(255, 215, 0, 0.4);
+}
+
+.live-update-indicator {
+    font-size: 0.75rem;
+    color: #28a745;
+    font-weight: 600;
+}
+
+.live-update-indicator::before {
+    content: "🔴";
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
 }

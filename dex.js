@@ -267,8 +267,32 @@ const wethAbi = [
 
 const wethAddress = "0x6f898cd313dcEe4D28A87F675BD93C471868B0Ac";
 
+// ====== MINT USDC CONTRACT CONFIGURATION ======
+const mintUSDCAbi = [
+    {"inputs":[{"internalType":"address","name":"_gjToken","type":"address"},{"internalType":"address","name":"_usdcToken","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},
+    {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},
+    {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"USDCDeposited","type":"event"},
+    {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"usdcAmount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"gjBurned","type":"uint256"}],"name":"USDCMinted","type":"event"},
+    {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"USDCWithdrawn","type":"event"},
+    {"inputs":[],"name":"BURN_ADDRESS","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+    {"inputs":[],"name":"GJ_BURN_AMOUNT","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+    {"inputs":[],"name":"USDC_MINT_AMOUNT","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+    {"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"depositUSDC","outputs":[],"stateMutability":"nonpayable","type":"function"},
+    {"inputs":[],"name":"emergencyWithdraw","outputs":[],"stateMutability":"nonpayable","type":"function"},
+    {"inputs":[],"name":"getAvailableMints","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+    {"inputs":[],"name":"getUSDCBalance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+    {"inputs":[],"name":"gjToken","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+    {"inputs":[],"name":"mintUSDC","outputs":[],"stateMutability":"nonpayable","type":"function"},
+    {"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+    {"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},
+    {"inputs":[],"name":"usdcToken","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+    {"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"withdrawUSDC","outputs":[],"stateMutability":"nonpayable","type":"function"}
+];
+
+const mintUSDCAddress = "0xb5F217ec7CFe59A6405e6457e27489177AF6fdE1";
+
 // ====== GLOBAL VARIABLES ======
-let provider, signer, dexContract, wethContract;
+let provider, signer, dexContract, wethContract, mintUSDCContract;
 let isInitialized = false;
 
 // ====== INITIALIZATION ======
@@ -278,7 +302,15 @@ async function initializeDEX() {
   try {
     if (window.ethereum && window.ethers) {
       provider = new window.ethers.providers.Web3Provider(window.ethereum);
-      signer = provider.getSigner();
+      
+      // Use global signer if available, otherwise create new one
+      if (window.signer) {
+        signer = window.signer;
+        console.log("✅ Using global signer from app.js");
+      } else {
+        signer = provider.getSigner();
+        console.log("✅ Created new signer");
+      }
       
       if (dexAbi.length && dexAddress) {
         dexContract = new window.ethers.Contract(dexAddress, dexAbi, signer);
@@ -291,8 +323,21 @@ async function initializeDEX() {
         window.wethContract = wethContract; // Export globally
         console.log("✅ WETH contract initialized:", wethAddress);
       }
+
+      // Initialize MintUSDC contract
+      if (mintUSDCAbi.length && mintUSDCAddress) {
+        mintUSDCContract = new window.ethers.Contract(mintUSDCAddress, mintUSDCAbi, signer);
+        window.mintUSDCContract = mintUSDCContract; // Export globally
+        console.log("✅ MintUSDC contract initialized:", mintUSDCAddress);
+      }
       
       isInitialized = true;
+      console.log("🎉 DEX initialization complete!");
+      
+      // Setup forms after initialization
+      setupSwapForm();
+      setupMintUSDCForm();
+      setupDepositUSDCForm();
     }
   } catch (error) {
     console.error("❌ DEX initialization failed:", error);
@@ -1119,16 +1164,30 @@ function setupLPForm() {
 
 // ====== SWAP FORM HANDLER ======
 function setupSwapForm() {
+  console.log("🔧 Setting up swap form...");
   const swapForm = document.getElementById("swapForm");
-  if (!swapForm) return;
+  if (!swapForm) {
+    console.log("❌ Swap form not found!");
+    return;
+  }
+  
+  // Check if already set up
+  if (swapForm.dataset.setupComplete === "true") {
+    console.log("✅ Swap form already set up, skipping...");
+    return;
+  }
+  
+  console.log("✅ Swap form found, adding event listener");
   
   swapForm.addEventListener("submit", async (e) => {
     e.preventDefault();
+    console.log("🚀 Swap form submitted!");
     
     const swapStatus = document.getElementById("swapStatus");
     if (swapStatus) swapStatus.textContent = "";
     
     if (!dexContract) {
+      console.log("❌ DEX contract not configured!");
       if (swapStatus) {
         swapStatus.textContent = "DEX contract not configured!";
         swapStatus.className = "status error";
@@ -1140,8 +1199,11 @@ function setupSwapForm() {
     const direction = document.getElementById("swapDirection").value;
     const amount = document.getElementById("swapAmount").value.trim();
     
+    console.log("💡 Swap parameters:", { tokenAddress, direction, amount });
+    
     // Validation
     if (!window.ethers.utils.isAddress(tokenAddress)) {
+      console.log("❌ Invalid token address:", tokenAddress);
       if (swapStatus) {
         swapStatus.textContent = "Invalid token address!";
         swapStatus.className = "status error";
@@ -1150,6 +1212,7 @@ function setupSwapForm() {
     }
     
     if (isNaN(amount) || Number(amount) <= 0) {
+      console.log("❌ Invalid amount:", amount);
       if (swapStatus) {
         swapStatus.textContent = "Invalid amount!";
         swapStatus.className = "status error";
@@ -1184,6 +1247,54 @@ function setupSwapForm() {
           swapStatus.className = "status success";
         }
         
+        // Update balances after successful swap
+        console.log("🔄 Starting balance update after ETH to Token swap...");
+        if (typeof window.updateBalancesQuick === 'function') {
+          await window.updateBalancesQuick();
+          console.log("✅ updateBalancesQuick completed for ETH to Token");
+        } else {
+          console.log("❌ updateBalancesQuick function not found, waiting...");
+          // Wait a bit and try again
+          setTimeout(async () => {
+            if (typeof window.updateBalancesQuick === 'function') {
+              await window.updateBalancesQuick();
+              console.log("✅ updateBalancesQuick completed after delay");
+            } else {
+              console.log("❌ updateBalancesQuick still not found");
+            }
+          }, 1000);
+        }
+        
+        // Force update specific token balance if it's GJ token
+        if (tokenAddress.toLowerCase() === "0x6B7ca0E7dDED09492ecC281d4Bf8C4c872C89c8E".toLowerCase()) {
+          console.log("🔄 Forcing GJ balance update after ETH to Token swap");
+          if (window.contract && window.signer) {
+            try {
+              const userAddress = await window.signer.getAddress();
+              const gjBalance = await window.contract.balanceOf(userAddress);
+              const decimals = await window.contract.decimals();
+              const gjFormatted = parseFloat(window.ethers.utils.formatUnits(gjBalance, decimals)).toFixed(4);
+              
+              const gjBalanceSpan = document.getElementById("gjBalance");
+              if (gjBalanceSpan) {
+                gjBalanceSpan.textContent = `GJ: ${gjFormatted}`;
+                gjBalanceSpan.style.animation = 'balanceFlash 0.6s ease-out';
+                setTimeout(() => {
+                  if (gjBalanceSpan) gjBalanceSpan.style.animation = '';
+                }, 600);
+                console.log("✅ GJ balance updated:", gjFormatted);
+              }
+            } catch (error) {
+              console.error("Error updating GJ balance:", error);
+            }
+          }
+        }
+        
+        // Reset form
+        swapForm.reset();
+        // Set default GJ token address back
+        document.getElementById("swapTokenAddress").value = "0x6B7ca0E7dDED09492ecC281d4Bf8C4c872C89c8E";
+        
       } else {
         // Swap Token to ETH
         const tokenAmountWei = window.ethers.utils.parseUnits(amount, decimals);
@@ -1214,6 +1325,54 @@ function setupSwapForm() {
           swapStatus.textContent = "Swap Token to ETH successful!";
           swapStatus.className = "status success";
         }
+        
+        // Update balances after successful swap
+        console.log("🔄 Starting balance update after Token to ETH swap...");
+        if (typeof window.updateBalancesQuick === 'function') {
+          await window.updateBalancesQuick();
+          console.log("✅ updateBalancesQuick completed for Token to ETH");
+        } else {
+          console.log("❌ updateBalancesQuick function not found, waiting...");
+          // Wait a bit and try again
+          setTimeout(async () => {
+            if (typeof window.updateBalancesQuick === 'function') {
+              await window.updateBalancesQuick();
+              console.log("✅ updateBalancesQuick completed after delay");
+            } else {
+              console.log("❌ updateBalancesQuick still not found");
+            }
+          }, 1000);
+        }
+        
+        // Force update specific token balance if it's GJ token
+        if (tokenAddress.toLowerCase() === "0x6B7ca0E7dDED09492ecC281d4Bf8C4c872C89c8E".toLowerCase()) {
+          console.log("🔄 Forcing GJ balance update after Token to ETH swap");
+          if (window.contract && window.signer) {
+            try {
+              const userAddress = await window.signer.getAddress();
+              const gjBalance = await window.contract.balanceOf(userAddress);
+              const decimals = await window.contract.decimals();
+              const gjFormatted = parseFloat(window.ethers.utils.formatUnits(gjBalance, decimals)).toFixed(4);
+              
+              const gjBalanceSpan = document.getElementById("gjBalance");
+              if (gjBalanceSpan) {
+                gjBalanceSpan.textContent = `GJ: ${gjFormatted}`;
+                gjBalanceSpan.style.animation = 'balanceFlash 0.6s ease-out';
+                setTimeout(() => {
+                  if (gjBalanceSpan) gjBalanceSpan.style.animation = '';
+                }, 600);
+                console.log("✅ GJ balance updated:", gjFormatted);
+              }
+            } catch (error) {
+              console.error("Error updating GJ balance:", error);
+            }
+          }
+        }
+        
+        // Reset form
+        swapForm.reset();
+        // Set default GJ token address back
+        document.getElementById("swapTokenAddress").value = "0x6B7ca0E7dDED09492ecC281d4Bf8C4c872C89c8E";
       }
       
     } catch (err) {
@@ -1750,13 +1909,294 @@ function setupWETHFunctionality() {
   });
 }
 
+// ====== MINT USDC FUNCTIONALITY ======
+function setupMintUSDCForm() {
+  console.log("🔧 Setting up Mint USDC form...");
+  const mintButton = document.getElementById("mintUSDCButton");
+  const mintStatus = document.getElementById("mintUSDCStatus");
+  const mintText = document.getElementById("mintUSDCText");
+  const availableMints = document.getElementById("availableMints");
+  
+  if (!mintButton) {
+    console.log("❌ Mint USDC button not found!");
+    return;
+  }
+  
+  console.log("✅ Mint USDC form found, setting up...");
+
+  // Update available mints periodically
+  async function updateAvailableMints() {
+    if (!mintUSDCContract) return;
+    
+    try {
+      const mints = await mintUSDCContract.getAvailableMints();
+      if (availableMints) {
+        availableMints.textContent = mints.toString();
+        
+        // Enable/disable button based on availability
+        if (mints.gt(0)) {
+          mintButton.disabled = false;
+          mintText.textContent = "Mint 33 USDC";
+        } else {
+          mintButton.disabled = true;
+          mintText.textContent = "No USDC Available";
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching available mints:", error);
+      if (availableMints) availableMints.textContent = "Error";
+    }
+  }
+
+  // Initial update
+  updateAvailableMints();
+  
+  // Update every 10 seconds
+  setInterval(updateAvailableMints, 10000);
+
+  mintButton.addEventListener("click", async () => {
+    if (!mintUSDCContract || !signer) {
+      if (mintStatus) {
+        mintStatus.textContent = "Contract not initialized or wallet not connected!";
+        mintStatus.className = "status error";
+      }
+      return;
+    }
+
+    try {
+      if (mintStatus) {
+        mintStatus.textContent = "Checking balances...";
+        mintStatus.className = "status";
+      }
+
+      // Check user's GJ balance
+      const userAddress = await signer.getAddress();
+      const gjTokenAddress = "0x6B7ca0E7dDED09492ecC281d4Bf8C4c872C89c8E"; // GJ token address
+      const gjContract = new window.ethers.Contract(gjTokenAddress, ERC20_ABI, signer);
+      
+      const gjBalance = await gjContract.balanceOf(userAddress);
+      const requiredGJ = window.ethers.utils.parseUnits("0.666", 18); // 0.666 GJ
+      
+      if (gjBalance.lt(requiredGJ)) {
+        if (mintStatus) {
+          mintStatus.textContent = `Insufficient GJ balance! Need 0.666 GJ, have ${window.ethers.utils.formatEther(gjBalance)}`;
+          mintStatus.className = "status error";
+        }
+        return;
+      }
+
+      // Check allowance
+      const allowance = await gjContract.allowance(userAddress, mintUSDCAddress);
+      if (allowance.lt(requiredGJ)) {
+        if (mintStatus) {
+          mintStatus.textContent = "Approving GJ tokens...";
+          mintStatus.className = "status";
+        }
+        
+        const approveTx = await gjContract.approve(mintUSDCAddress, requiredGJ);
+        await approveTx.wait();
+      }
+
+      // Mint USDC
+      if (mintStatus) {
+        mintStatus.textContent = "Minting USDC...";
+        mintStatus.className = "status";
+      }
+
+      const tx = await mintUSDCContract.mintUSDC();
+      await tx.wait();
+
+      if (mintStatus) {
+        mintStatus.textContent = "✅ Successfully minted 33 USDC! 0.666 GJ burned.";
+        mintStatus.className = "status success";
+      }
+
+      // Update balances
+      if (typeof window.updateBalancesQuick === 'function') {
+        await window.updateBalancesQuick();
+      }
+
+      // Update available mints
+      await updateAvailableMints();
+
+    } catch (error) {
+      console.error("❌ Mint USDC error:", error);
+      if (mintStatus) {
+        mintStatus.textContent = `Mint error: ${error.message}`;
+        mintStatus.className = "status error";
+      }
+    }
+  });
+}
+
+// ====== DEPOSIT USDC FUNCTIONALITY ======
+function setupDepositUSDCForm() {
+  console.log("🔧 Setting up Deposit USDC form...");
+  const depositButton = document.getElementById("depositUSDCButton");
+  const depositStatus = document.getElementById("depositUSDCStatus");
+  const depositAmountInput = document.getElementById("depositAmount");
+  const poolUSDCBalance = document.getElementById("poolUSDCBalance");
+  const userDeposits = document.getElementById("userDeposits");
+  const totalDeposits = document.getElementById("totalDeposits");
+  
+  if (!depositButton) {
+    console.log("❌ Deposit USDC button not found!");
+    return;
+  }
+  
+  console.log("✅ Deposit USDC form found, setting up...");
+
+  // Update deposit info periodically
+  async function updateDepositInfo() {
+    if (!mintUSDCContract || !signer) return;
+    
+    try {
+      const userAddress = await signer.getAddress();
+      
+      // Get contract USDC balance
+      const contractBalance = await mintUSDCContract.getUSDCBalance();
+      if (poolUSDCBalance) {
+        poolUSDCBalance.textContent = `${window.ethers.utils.formatUnits(contractBalance, 6)} USDC`;
+      }
+      
+      // Get user deposits
+      const userDeposit = await mintUSDCContract.getUserDeposit(userAddress);
+      if (userDeposits) {
+        userDeposits.textContent = `${window.ethers.utils.formatUnits(userDeposit, 6)} USDC`;
+      }
+      
+      // Get total deposits
+      const totalDeposit = await mintUSDCContract.getTotalDeposits();
+      if (totalDeposits) {
+        totalDeposits.textContent = `${window.ethers.utils.formatUnits(totalDeposit, 6)} USDC`;
+      }
+      
+      console.log("✅ Updated deposit info:", {
+        poolBalance: window.ethers.utils.formatUnits(contractBalance, 6),
+        userDeposit: window.ethers.utils.formatUnits(userDeposit, 6),
+        totalDeposit: window.ethers.utils.formatUnits(totalDeposit, 6)
+      });
+    } catch (error) {
+      console.error("Error fetching deposit info:", error);
+    }
+  }
+
+  // Export updateDepositInfo globally
+  window.updateDepositInfo = updateDepositInfo;
+
+  // Initial update
+  updateDepositInfo();
+  
+  // Update every 10 seconds
+  setInterval(updateDepositInfo, 10000);
+
+  depositButton.addEventListener("click", async () => {
+    if (!mintUSDCContract || !signer) {
+      console.error("Contract or signer not available");
+      return;
+    }
+
+    const amount = depositAmountInput.value;
+    if (!amount || parseFloat(amount) <= 0) {
+      if (depositStatus) {
+        depositStatus.textContent = "Please enter a valid amount";
+        depositStatus.className = "status error";
+      }
+      return;
+    }
+
+    try {
+      depositButton.disabled = true;
+      if (depositStatus) {
+        depositStatus.textContent = "Processing deposit...";
+        depositStatus.className = "status";
+      }
+
+      // Convert amount to proper units (6 decimals for USDC)
+      const amountInWei = window.ethers.utils.parseUnits(amount, 6);
+      
+      // Check user's USDC balance
+      const userAddress = await signer.getAddress();
+      const usdcTokenAddress = "0x2f3463756C59387D6Cd55b034100caf7ECfc757b"; // USDC token address
+      const usdcContract = new window.ethers.Contract(usdcTokenAddress, ERC20_ABI, signer);
+      
+      const usdcBalance = await usdcContract.balanceOf(userAddress);
+      
+      if (usdcBalance.lt(amountInWei)) {
+        if (depositStatus) {
+          depositStatus.textContent = `Insufficient USDC balance! Need ${amount} USDC, have ${window.ethers.utils.formatUnits(usdcBalance, 6)}`;
+          depositStatus.className = "status error";
+        }
+        depositButton.disabled = false;
+        return;
+      }
+
+      // Check allowance
+      const allowance = await usdcContract.allowance(userAddress, mintUSDCContract.address);
+      
+      if (allowance.lt(amountInWei)) {
+        if (depositStatus) {
+          depositStatus.textContent = "Approving USDC...";
+          depositStatus.className = "status";
+        }
+        
+        const approveTx = await usdcContract.approve(mintUSDCContract.address, amountInWei);
+        await approveTx.wait();
+      }
+
+      // Deposit USDC
+      if (depositStatus) {
+        depositStatus.textContent = "Depositing USDC...";
+        depositStatus.className = "status";
+      }
+      
+      const tx = await mintUSDCContract.depositUSDC(amountInWei);
+      await tx.wait();
+
+      if (depositStatus) {
+        depositStatus.textContent = `✅ Successfully deposited ${amount} USDC!`;
+        depositStatus.className = "status success";
+      }
+      
+      // Clear input
+      depositAmountInput.value = "";
+      
+      // Update info immediately
+      setTimeout(updateDepositInfo, 2000);
+      
+      // Update available mints in mint form
+      if (window.updateAvailableMints) {
+        window.updateAvailableMints();
+      }
+      
+      // Update balances
+      if (typeof window.updateBalancesQuick === 'function') {
+        await window.updateBalancesQuick();
+      }
+
+    } catch (error) {
+      console.error("Deposit failed:", error);
+      if (depositStatus) {
+        depositStatus.textContent = `❌ Deposit failed: ${error.message || error}`;
+        depositStatus.className = "status error";
+      }
+    } finally {
+      depositButton.disabled = false;
+    }
+  });
+}
+
 // ====== GLOBAL EXPORTS ======
 window.renderMyPools = renderMyPools;
 window.initializeDEX = initializeDEX;
 window.dexContract = dexContract;
 window.wethContract = wethContract;
+window.mintUSDCContract = mintUSDCContract;
 window.loadVerifiedTokens = loadVerifiedTokens;
 window.copyToClipboard = copyToClipboard;
 window.toggleFavorite = toggleFavorite;
 window.updateWETHBalances = updateWETHBalances;
 window.setupWETHFunctionality = setupWETHFunctionality;
+window.setupMintUSDCForm = setupMintUSDCForm;
+window.setupDepositUSDCForm = setupDepositUSDCForm;
+window.updateDepositInfo = updateDepositInfo;

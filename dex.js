@@ -1183,17 +1183,31 @@ function setupSwapForm() {
     e.preventDefault();
     console.log("🚀 Swap form submitted!");
     
+    // Prevent multiple submissions
+    const submitButton = swapForm.querySelector('button[type="submit"]');
+    if (submitButton && submitButton.disabled) {
+      console.log("⏳ Swap already in progress, ignoring duplicate submission");
+      return;
+    }
+    
+    // Disable submit button during processing
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.textContent = "Processing...";
+    }
+    
     const swapStatus = document.getElementById("swapStatus");
     if (swapStatus) swapStatus.textContent = "";
     
-    if (!dexContract) {
-      console.log("❌ DEX contract not configured!");
-      if (swapStatus) {
-        swapStatus.textContent = "DEX contract not configured!";
-        swapStatus.className = "status error";
+    try {
+      if (!dexContract) {
+        console.log("❌ DEX contract not configured!");
+        if (swapStatus) {
+          swapStatus.textContent = "DEX contract not configured!";
+          swapStatus.className = "status error";
+        }
+        return;
       }
-      return;
-    }
     
     const tokenAddress = document.getElementById("swapTokenAddress").value.trim();
     const direction = document.getElementById("swapDirection").value;
@@ -1309,11 +1323,15 @@ function setupSwapForm() {
           return;
         }
         
+        // Check allowance and approve only if needed
         const allowance = await erc20.allowance(userAddress, dexAddress);
         if (allowance.lt(tokenAmountWei)) {
-          if (swapStatus) swapStatus.textContent = "Approving token...";
-          const approveTx = await erc20.approve(dexAddress, tokenAmountWei);
+          if (swapStatus) swapStatus.textContent = "Approving token (one-time setup)...";
+          // Approve max amount to avoid future approvals
+          const maxApproval = window.ethers.constants.MaxUint256;
+          const approveTx = await erc20.approve(dexAddress, maxApproval);
           await approveTx.wait();
+          if (swapStatus) swapStatus.textContent = "Approval completed, proceeding with swap...";
         }
         
         if (swapStatus) swapStatus.textContent = "Swapping Token to ETH...";
@@ -1381,8 +1399,32 @@ function setupSwapForm() {
         swapStatus.textContent = `Swap error: ${err.message}`;
         swapStatus.className = "status error";
       }
+    } finally {
+      // Re-enable submit button
+      if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.textContent = "Swap";
+      }
+    }
+    
+    } catch (error) {
+      console.error("❌ Outer swap form error:", error);
+      if (swapStatus) {
+        swapStatus.textContent = `Error: ${error.message}`;
+        swapStatus.className = "status error";
+      }
+    } finally {
+      // Always re-enable submit button
+      if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.textContent = "Swap";
+      }
     }
   });
+  
+  // Mark form as set up
+  swapForm.dataset.setupComplete = "true";
+  console.log("✅ Swap form setup completed");
 }
 
 // ====== CHART FUNCTIONALITY ======

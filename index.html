@@ -9,7 +9,7 @@
     <meta name="robots" content="index, follow">
     <title>DEXMA</title>
     <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="token-extras.css">
+      <link rel="icon" type="image/x-icon" href="./gj-removebg-preview.png">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
 
     <script src="app.js"></script>
@@ -101,7 +101,7 @@
                 <div class="card-content">
                     <div class="mint-info" style="background: #1a1a1a; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border: 1px solid rgba(255, 215, 0, 0.2);">
                         <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                            <span style="color: #888;">Required:</span>
+                            <span style="color: #888;">Cost:</span>
                             <span style="color: #ffd700; font-weight: 600;">0.666 GJ</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
@@ -239,7 +239,7 @@
                             <span style="color: #888;">Pool Balance:</span>
                             <span id="poolUSDCBalance" style="color: #28a745; font-weight: 600;">- USDC</span>
                         </div>
-                       
+                        
                        
                     </div>
                     
@@ -255,6 +255,44 @@
                     </div>
                     
                     <div id="depositUSDCStatus" class="status"></div>
+                </div>
+            </div>
+
+            <!-- Help & Guide Card -->
+            <div class="dex-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <span class="card-icon">❓</span>
+                        Help & Guide
+                    </h2>
+                </div>
+                <div class="card-content">
+                    <div class="help-section">
+                        <button class="help-btn" onclick="showGuide('eth-guide')">
+                            <span class="help-icon">⛽</span>
+                            <span class="help-text">How to get ETH DOMA TESTNET?</span>
+                        </button>
+                        
+                        <button class="help-btn" onclick="showGuide('usdc-guide')">
+                            <span class="help-icon">💵</span>
+                            <span class="help-text">How to get free USDC on DOMA TESTNET?</span>
+                        </button>
+                        
+                        <button class="help-btn" onclick="showGuide('domainfi-guide')">
+                            <span class="help-icon">🌐</span>
+                            <span class="help-text">Complete Guide to DomainFi & Doma Protocol</span>
+                        </button>
+                        
+                        <button class="help-btn" onclick="showGuide('domain-guide')">
+                            <span class="help-icon">🏷️</span>
+                            <span class="help-text">How to Tokenize & Trade Domains</span>
+                        </button>
+                        
+                        <button class="help-btn" onclick="showGuide('testnet-guide')">
+                            <span class="help-icon">🧪</span>
+                            <span class="help-text">Complete Testnet Participation Guide</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -274,5 +312,616 @@
             </div>
         </div>
     </main>
+
+    <!-- Help Modal -->
+    <div id="helpModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <div id="modalContent"></div>
+        </div>
+    </div>
+
+    <!-- Bridge Modal -->
+    <div id="bridgeModal" class="modal" style="display: none;">
+        <div class="bridge-modal-content">
+            <div class="bridge-header">
+                <h3>🌉 DOMA Bridge Testnet</h3>
+                <span class="close-btn" onclick="closeBridgeModal()">&times;</span>
+            </div>
+            <iframe id="bridgeFrame" src="" frameborder="0"></iframe>
+        </div>
+    </div>
+
+    <style>
+        .help-section {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        
+        .help-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem;
+            background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            width: 100%;
+        }
+        
+        .help-btn:hover {
+            background: linear-gradient(135deg, #3a3a3a, #2a2a2a);
+            border-color: rgba(255, 215, 0, 0.4);
+            transform: translateY(-2px);
+        }
+        
+        .help-icon {
+            font-size: 1.5rem;
+            min-width: 2rem;
+        }
+        
+        .help-text {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
+        }
+        
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+            margin: 5% auto;
+            padding: 2rem;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+            color: white;
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ffd700;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+        
+        .close-btn:hover {
+            color: #fff;
+        }
+        
+        .guide-content h3 {
+            color: #ffd700;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+        
+        .guide-content p {
+            line-height: 1.6;
+            margin-bottom: 1rem;
+            color: #e0e0e0;
+        }
+        
+        .guide-content .highlight {
+            color: #ffd700;
+            font-weight: 600;
+        }
+        
+        .bridge-btn {
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 1rem 0;
+            transition: all 0.3s ease;
+            display: inline-block;
+            text-decoration: none;
+        }
+        
+        .bridge-btn:hover {
+            background: linear-gradient(135deg, #ff5722, #ff9800);
+            transform: translateY(-2px);
+        }
+        
+        .step {
+            background: rgba(255, 215, 0, 0.1);
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 0.5rem 0;
+            border-left: 4px solid #ffd700;
+        }
+        
+        .bridge-modal-content {
+            background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+            margin: 2% auto;
+            padding: 0;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 12px;
+            width: 95%;
+            max-width: 1200px;
+            height: 90vh;
+            position: relative;
+            color: white;
+            overflow: hidden;
+        }
+        
+        .bridge-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+            background: rgba(255, 215, 0, 0.05);
+        }
+        
+        .bridge-header h3 {
+            margin: 0;
+            color: #ffd700;
+            font-size: 1.2rem;
+        }
+        
+        #bridgeFrame {
+            width: 100%;
+            height: calc(100% - 70px);
+            border: none;
+        }
+    </style>
+
+    <script>
+        function showGuide(guideType) {
+            const modal = document.getElementById('helpModal');
+            const content = document.getElementById('modalContent');
+            
+            let guideContent = '';
+            
+            switch(guideType) {
+                case 'eth-guide':
+                    guideContent = `
+                        <div class="guide-content">
+                            <h3>� Làm thế nào để có ETH DOMA TESTNET?</h3>
+                            <p><em>Để sử dụng DOMA DEX, bạn cần ETH DOMA để trả phí gas. Đây là hướng dẫn chi tiết:</em></p>
+                            
+                            <div class="step">
+                                <p><strong>🔰 Step 1: Get ETH Sepolia</strong></p>
+                                <p>First, you need <span class="highlight">ETH Sepolia</span> to bridge to DOMA:</p>
+                                <ul style="margin-left: 1rem; margin-top: 0.5rem;">
+                                    <li>🚰 <strong>Alchemy Faucet:</strong> faucet.alchemy.com</li>
+                                    <li>🚰 <strong>Infura Faucet:</strong> infura.io/faucet/sepolia</li>
+                                    <li>🚰 <strong>QuickNode Faucet:</strong> faucet.quicknode.com/ethereum/sepolia</li>
+                                </ul>
+                                <p><em>💡 Tip: May require Twitter or GitHub verification.</em></p>
+                            </div>
+                            
+                            <div class="step">
+                                <p><strong>🌉 Step 2: Bridge from Sepolia → DOMA Testnet</strong></p>
+                                <p>Use the official bridge to transfer ETH:</p>
+                                <button class="bridge-btn" onclick="openBridgeModal()">🌉 Open DOMA Bridge Testnet</button>
+                                <p style="margin-top: 0.5rem;"><em>Bridge will open in this page, no new tab needed.</em></p>
+                            </div>
+                            
+                            <div class="step">
+                                <p><strong>⚙️ Step 3: Execute Bridge</strong></p>
+                                <ul style="margin-left: 1rem;">
+                                    <li>🔗 <strong>Connect Wallet:</strong> MetaMask or WalletConnect</li>
+                                    <li>📤 <strong>From:</strong> Select Sepolia Network</li>
+                                    <li>📥 <strong>To:</strong> Select DOMA Testnet</li>
+                                    <li>💸 <strong>Amount:</strong> Enter ETH amount to bridge (minimum 0.01 ETH)</li>
+                                    <li>✅ <strong>Confirm:</strong> Sign transaction and wait 5-10 minutes</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="step">
+                                <p><strong>🎯 Step 4: Check Results</strong></p>
+                                <p>After bridging, check ETH DOMA in your wallet. If not visible:</p>
+                                <ul style="margin-left: 1rem;">
+                                    <li>🔄 Refresh page and reconnect wallet</li>
+                                    <li>⚡ Ensure you've switched to DOMA Testnet</li>
+                                    <li>⏰ Wait 5-10 more minutes if transaction is pending</li>
+                                </ul>
+                            </div>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'usdc-guide':
+                    guideContent = `
+                        <div class="guide-content">
+                            <h3>💵 How to get free USDC on DOMA?</h3>
+                            <p><em>The USDC Mint system allows you to mint 33 USDC for free by burning 0.666 GJ tokens:</em></p>
+                            
+                            <div class="step">
+                                <p><strong>📋 Requirements before starting:</strong></p>
+                                <ul style="margin-left: 1rem;">
+                                    <li>✅ Have <span class="highlight">ETH DOMA</span> for gas fees (~0.001 ETH)</li>
+                                    <li>✅ Wallet connected to DOMA Testnet</li>
+                                    <li>✅ Understand that minting USDC will burn GJ tokens</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="step">
+                                <p><strong>🥇 Step 1: Mint GJ Tokens for free</strong></p>
+                                <p>First, you need GJ tokens:</p>
+                                <ul style="margin-left: 1rem;">
+                                    <li>🎯 Find the <strong>"Mint GJ"</strong> card on homepage</li>
+                                    <li>🔢 Enter GJ amount to mint (minimum 0.666 GJ)</li>
+                                    <li>💡 Recommend minting 1-2 GJ for future use</li>
+                                    <li>✅ Click "Mint GJ" and sign transaction</li>
+                                </ul>
+                                <p><em>⏰ Time: ~1-2 minutes</em></p>
+                            </div>
+                            
+                            <div class="step">
+                                <p><strong>💰 Step 2: Mint USDC (Rate: 0.666 GJ = 33 USDC)</strong></p>
+                                <p>After getting GJ tokens, proceed to mint USDC:</p>
+                                <ul style="margin-left: 1rem;">
+                                    <li>🎯 Find the <strong>"Mint USDC"</strong> card on homepage</li>
+                                    <li>🔢 System will auto-calculate: <span class="highlight">0.666 GJ → 33 USDC</span></li>
+                                    <li>🔥 Note: GJ will be <strong>burned</strong> after minting USDC</li>
+                                    <li>✅ Click "Mint USDC" and sign transaction</li>
+                                </ul>
+                                <p><em>⏰ Time: ~1-2 minutes</em></p>
+                            </div>
+                            
+                            <div class="step">
+                                <p><strong>🎉 Step 3: Check USDC balance</strong></p>
+                                <ul style="margin-left: 1rem;">
+                                    <li>🔄 Refresh page to update balance</li>
+                                    <li>💳 Check USDC balance in "My Balance" section</li>
+                                    <li>🎯 USDC can be used for: Swap, Add Liquidity, Trade</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="step">
+                                <p><strong>💡 Useful tips:</strong></p>
+                                <ul style="margin-left: 1rem;">
+                                    <li>🔁 Can mint USDC multiple times (0.666 GJ each time)</li>
+                                    <li>🏦 If USDC runs out, can deposit to pool for others to mint</li>
+                                    <li>⚡ Very low gas fees (~0.001 ETH) on DOMA</li>
+                                </ul>
+                            </div>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'domainfi-guide':
+                    guideContent = `
+                        <div class="guide-content">
+                            <h3>🌐 Complete Guide to DomainFi & Doma Protocol</h3>
+                            <p><strong>Doma Protocol</strong> is a purpose-built Layer 2 blockchain designed to <span class="highlight">modernize and unlock liquidity</span> for over 362 million existing and future domains, creating the world's first comprehensive DomainFi ecosystem.</p>
+                            
+                            <div class="step">
+                                <p><strong>DomainFi Economy - Tính năng chính:</strong></p>
+                                <ul style="margin-left: 1rem;">
+                                    <li>🏷️ <strong>Domain Tokenization:</strong> Chuyển đổi tên miền Web2 thành tài sản blockchain</li>
+                                    <li>🔗 <strong>Cross-Chain Bridge:</strong> Hỗ trợ đa chuỗi với Layer1 & Layer2 majors</li>
+                                    <li>� <strong>Domain Trading:</strong> Marketplace thanh khoản cao với NFT domains</li>
+                                    <li>🏦 <strong>Domain DeFi:</strong> Cho vay, staking, fractional ownership với domains</li>
+                                    <li>� <strong>Programmable Rights:</strong> Chia nhỏ quyền sở hữu domain thành tokens</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="step">
+                                <p><strong>🏗️ Doma Protocol Architecture (7 Core Modules):</strong></p>
+                                <ul style="margin-left: 1rem;">
+                                    <li>🏷️ <strong>Domain Tokenization:</strong> Convert domains into NFTs with ICANN compliance</li>
+                                    <li>🧩 <strong>Fractionalization:</strong> Split domains into fungible tokens for partial ownership</li>
+                                    <li>🔗 <strong>Cross-Chain Bridge:</strong> Native bridging across all L1/L2 blockchains</li>
+                                    <li>🎭 <strong>Composer Module:</strong> Decompose domains into programmable Synthetic Tokens</li>
+                                    <li>🏛️ <strong>Custodian:</strong> ICANN-compliant ownership transfers & registrar integration</li>
+                                    <li>⚖️ <strong>Compliance:</strong> UDRP support with transfer locks & forced detokenization</li>
+                                    <li>📊 <strong>Analytics:</strong> Comprehensive domain valuation & market data</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="step">
+                                <p><strong>💎 Token Types in Doma Ecosystem:</strong></p>
+                                <ul style="margin-left: 1rem;">
+                                    <li>🎯 <strong>Domain Ownership Tokens:</strong> Full domain ownership NFTs with transfer claims</li>
+                                    <li>🧩 <strong>Synthetic Tokens:</strong> Specific domain rights (DNS control, subdomain management)</li>
+                                    <li>💰 <strong>Fractional Tokens:</strong> Fungible shares of domain ownership for liquidity</li>
+                                    <li>🔄 <strong>Composability:</strong> Tokens can be split, merged, and recombined</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="step">
+                                <p><strong>📊 Market Impact & Statistics:</strong></p>
+                                <ul style="margin-left: 1rem;">
+                                    <li>💰 <strong>Total Addressable Market:</strong> <span class="highlight">$350+ billion</span> domain industry</li>
+                                    <li>🌍 <strong>Domains Supported:</strong> <span class="highlight">362+ million</span> existing domains</li>
+                                    <li>💳 <strong>Wallet Compatibility:</strong> <span class="highlight">400+ million</span> crypto wallets</li>
+                                    <li>🚀 <strong>Developer Ecosystem:</strong> <span class="highlight">$1M USDC</span> grant program</li>
+                                    <li>🏢 <strong>Enterprise Adoption:</strong> Registrar partnerships & institutional integrations</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="step">
+                                <p><strong>🛠️ DomainFi Use Cases & Applications:</strong></p>
+                                <ul style="margin-left: 1rem;">
+                                    <li>🏪 <strong>Instant Settlement Marketplaces:</strong> Trade domains without escrow</li>
+                                    <li>🏦 <strong>Domain-Collateralized Lending:</strong> Borrow against domain portfolios</li>
+                                    <li>� <strong>Fractional Domain Investment:</strong> Invest in premium domains with small capital</li>
+                                    <li>⚡ <strong>Automated Domain Rental:</strong> Smart contract-based leasing systems</li>
+                                    <li>💎 <strong>Domain Yield Farming:</strong> Stake domains for passive income</li>
+                                    <li>🎯 <strong>Cross-Platform Identity:</strong> Use domains as universal web3 usernames</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="step">
+                                <p><strong>🚀 Roadmap & Future Vision:</strong></p>
+                                <ul style="margin-left: 1rem;">
+                                    <li>🧪 <strong>Current (Testnet):</strong> D3 Registrar, bridge testing, early adopter rewards</li>
+                                    <li>⚡ <strong>Q2 2025:</strong> Mainnet launch with enterprise registrar partnerships</li>
+                                    <li>🌐 <strong>Q3 2025:</strong> Cross-chain domain support across 10+ blockchains</li>
+                                    <li>🏦 <strong>Q4 2025:</strong> DomainFi lending protocols & institutional adoption</li>
+                                    <li>🎯 <strong>2026:</strong> Global domain tokenization standard & regulatory framework</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="step">
+                                <p><strong>🔗 Official Resources & Community:</strong></p>
+                                <ul style="margin-left: 1rem;">
+                                    <li>📚 <strong>Documentation:</strong> <span class="highlight">docs.doma.xyz</span></li>
+                                    <li>🌐 <strong>Main Website:</strong> <span class="highlight">doma.xyz</span></li>
+                                    <li>� <strong>Testnet Dashboard:</strong> <span class="highlight">dashboard-testnet.doma.xyz</span></li>
+                                    <li>🏢 <strong>D3 Registrar:</strong> <span class="highlight">testnet.d3.app</span></li>
+                                    <li>🐦 <strong>Twitter:</strong> <span class="highlight">@domaprotocol</span></li>
+                                    <li>💬 <strong>Discord:</strong> <span class="highlight">discord.com/invite/doma</span></li>
+                                    <li>📖 <strong>Blog:</strong> <span class="highlight">d3.inc/blog</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'domain-guide':
+                    guideContent = `
+                        <div class="guide-content">
+                            <h3>🏷️ How to Tokenize & Trade Domains on Doma</h3>
+                            <p><em>Complete guide to domain tokenization, trading, and advanced DomainFi features using Doma Protocol:</em></p>
+                            
+                            <div class="step">
+                                <p><strong>🎯 Understanding Domain Tokenization</strong></p>
+                                <p>Doma Protocol transforms traditional domains into programmable blockchain assets:</p>
+                                <ul style="margin-left: 1rem;">
+                                    <li>🏷️ <strong>Domain Ownership Tokens:</strong> NFTs representing full domain ownership</li>
+                                    <li>🧩 <strong>Synthetic Tokens:</strong> Specific rights (DNS control, subdomain management)</li>
+                                    <li>💰 <strong>Fractional Tokens:</strong> Fungible shares enabling partial ownership</li>
+                                    <li>🔄 <strong>Composability:</strong> Tokens can be split, merged, and recombined</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="step">
+                                <p><strong>🚀 Tokenization Process (Step-by-Step)</strong></p>
+                                <ul style="margin-left: 1rem;">
+                                    <li>🌐 <strong>1. Visit D3 Registrar:</strong> <span class="highlight">testnet.d3.app</span></li>
+                                    <li>📧 <strong>2. Create Account:</strong> Register with email and verify</li>
+                                    <li>🔍 <strong>3. Search Domain:</strong> Look for available .io domains</li>
+                                    <li>� <strong>4. Purchase:</strong> Use test card (4242424242424242) or crypto</li>
+                                    <li>🎯 <strong>5. Choose Target Chain:</strong> Select blockchain for NFT minting</li>
+                                    <li>� <strong>6. Connect Wallet:</strong> Sign tokenization transaction</li>
+                                    <li>⏰ <strong>7. Wait Confirmation:</strong> Process takes 3-5 minutes</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="step">
+                                <p><strong>� Managing Tokenized Domains</strong></p>
+                                <ul style="margin-left: 1rem;">
+                                    <li>🌐 <strong>Access Dashboard:</strong> <span class="highlight">dashboard-testnet.doma.xyz</span></li>
+                                    <li>📧 <strong>Login:</strong> Use same email from registrar account</li>
+                                    <li>🔗 <strong>Link Wallet:</strong> Connect wallet containing Domain NFTs</li>
+                                    <li>� <strong>Portfolio View:</strong> See domains from all registrars unified</li>
+                                    <li>📈 <strong>Analytics:</strong> Track domain values and market trends</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="step">
+                                <p><strong>🔄 Advanced Domain Features</strong></p>
+                                <ul style="margin-left: 1rem;">
+                                    <li>� <strong>Cross-Chain Bridge:</strong> Move domains between blockchains</li>
+                                    <li>🧩 <strong>Domain Fractionalization:</strong> Split into tradeable shares</li>
+                                    <li>🎭 <strong>Synthetic Token Creation:</strong> Extract specific domain rights</li>
+                                    <li>💰 <strong>Marketplace Listing:</strong> List for sale with custom pricing</li>
+                                    <li>📧 <strong>Claim Process:</strong> Transfer ownership with ICANN compliance</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="step">
+                                <p><strong>� DomainFi Applications</strong></p>
+                                <ul style="margin-left: 1rem;">
+                                    <li>🏪 <strong>Instant Trading:</strong> No escrow, immediate settlement</li>
+                                    <li>🏦 <strong>Domain Lending:</strong> Use domains as loan collateral</li>
+                                    <li>📊 <strong>Yield Farming:</strong> Stake domains for passive income</li>
+                                    <li>� <strong>Identity Services:</strong> Use as cross-platform username</li>
+                                    <li>📧 <strong>Email Integration:</strong> Set up domain-based email</li>
+                                    <li>🌐 <strong>DNS Compatibility:</strong> Works in standard web browsers</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="step">
+                                <p><strong>⚖️ Compliance & Security</strong></p>
+                                <ul style="margin-left: 1rem;">
+                                    <li>🛡️ <strong>ICANN Compliance:</strong> Full regulatory compliance maintained</li>
+                                    <li>� <strong>Transfer Locks:</strong> Protection during dispute resolution</li>
+                                    <li>⚖️ <strong>UDRP Support:</strong> Traditional legal processes supported</li>
+                                    <li>🔐 <strong>Signature Verification:</strong> Only authorized registrars can tokenize</li>
+                                    <li>📋 <strong>Contact Information:</strong> Required for ownership transfers</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="step">
+                                <p><strong>🚀 Future Opportunities (Mainnet)</strong></p>
+                                <ul style="margin-left: 1rem;">
+                                    <li>� <strong>Global Registrar Network:</strong> Support for all major TLDs</li>
+                                    <li>🏢 <strong>Enterprise Integration:</strong> Institutional domain management</li>
+                                    <li>💰 <strong>Domain Derivatives:</strong> Complex financial instruments</li>
+                                    <li>🤖 <strong>Automated Management:</strong> Smart contract domain operations</li>
+                                    <li>📊 <strong>Professional Analytics:</strong> Advanced market intelligence</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="step">
+                                <p><strong>� Essential Resources</strong></p>
+                                <ul style="margin-left: 1rem;">
+                                    <li>📚 <strong>Technical Docs:</strong> <span class="highlight">docs.doma.xyz</span></li>
+                                    <li>🏢 <strong>Testnet Registrar:</strong> <span class="highlight">testnet.d3.app</span></li>
+                                    <li>� <strong>Dashboard:</strong> <span class="highlight">dashboard-testnet.doma.xyz</span></li>
+                                    <li>� <strong>Bridge Service:</strong> <span class="highlight">bridge-testnet.doma.xyz</span></li>
+                                    <li>� <strong>Community:</strong> <span class="highlight">discord.com/invite/doma</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'testnet-guide':
+                    guideContent = `
+                        <div class="guide-content">
+                            <h3>🧪 Complete Testnet Participation Guide</h3>
+                            <p><em>Join the Doma Protocol testnet to earn early adopter benefits and test the future of DomainFi:</em></p>
+                            
+                            <div class="step">
+                                <p><strong>🎯 Testnet Overview & Benefits</strong></p>
+                                <ul style="margin-left: 1rem;">
+                                    <li>🎁 <strong>Early Adopter Rewards:</strong> Higher multiplier on earnings for testnet participants</li>
+                                    <li>🌟 <strong>Community Aura:</strong> Recognition as early contributor with exclusive access</li>
+                                    <li>📈 <strong>Marketplace Boost:</strong> Algorithmic advantage in search and liquidity rankings</li>
+                                    <li>🎪 <strong>Exclusive Events:</strong> Founder-only events and governance participation</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="step">
+                                <p><strong>🚀 Step 1: Set Up Testnet Access</strong></p>
+                                <ul style="margin-left: 1rem;">
+                                    <li>🌐 <strong>Visit D3 Registrar:</strong> <span class="highlight">testnet.d3.app</span></li>
+                                    <li>📧 <strong>Create Account:</strong> Register with email address</li>
+                                    <li>🔗 <strong>Connect Wallet:</strong> Link MetaMask or WalletConnect</li>
+                                    <li>⚡ <strong>Switch Network:</strong> Add DOMA Testnet to your wallet</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="step">
+                                <p><strong>🏷️ Step 2: Register & Tokenize Test Domain</strong></p>
+                                <ul style="margin-left: 1rem;">
+                                    <li>🔍 <strong>Search Domain:</strong> Look for available .io domains on D3</li>
+                                    <li>💳 <strong>Purchase Options:</strong> Fiat (Stripe test card: 4242424242424242) or Crypto</li>
+                                    <li>🎯 <strong>Choose Target Chain:</strong> Select blockchain for tokenization</li>
+                                    <li>✅ <strong>Confirm Tokenization:</strong> Sign wallet transaction to mint Domain NFT</li>
+                                    <li>⏰ <strong>Wait Process:</strong> Tokenization takes several minutes</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="step">
+                                <p><strong>📊 Step 3: Use Doma Dashboard</strong></p>
+                                <ul style="margin-left: 1rem;">
+                                    <li>🌐 <strong>Access Dashboard:</strong> <span class="highlight">dashboard-testnet.doma.xyz</span></li>
+                                    <li>📧 <strong>Login:</strong> Use same email from D3 registration</li>
+                                    <li>🔗 <strong>Link Wallet:</strong> Connect wallet used for tokenization</li>
+                                    <li>📱 <strong>View Portfolio:</strong> See all tokenized domains from all registrars</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="step">
+                                <p><strong>🔄 Step 4: Test Advanced Features</strong></p>
+                                <ul style="margin-left: 1rem;">
+                                    <li>🌉 <strong>Cross-Chain Bridge:</strong> Move Domain NFT to different blockchains</li>
+                                    <li>💰 <strong>List for Sale:</strong> Test marketplace functionality</li>
+                                    <li>🎭 <strong>Transfer Domain:</strong> Test ownership transfer & claim process</li>
+                                    <li>📧 <strong>Domain Claim:</strong> Provide contact info after transfer</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="step">
+                                <p><strong>💎 Step 5: Maximize Testnet Benefits</strong></p>
+                                <ul style="margin-left: 1rem;">
+                                    <li>🎯 <strong>Register Multiple Domains:</strong> Test different TLDs and features</li>
+                                    <li>🔄 <strong>Active Trading:</strong> Buy/sell domains to boost marketplace exposure</li>
+                                    <li>💬 <strong>Community Engagement:</strong> Join Discord, provide feedback</li>
+                                    <li>📝 <strong>Documentation:</strong> Report bugs and suggest improvements</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="step">
+                                <p><strong>🔗 Important Testnet Resources:</strong></p>
+                                <ul style="margin-left: 1rem;">
+                                    <li>🏢 <strong>D3 Registrar:</strong> <span class="highlight">testnet.d3.app</span></li>
+                                    <li>📊 <strong>Dashboard:</strong> <span class="highlight">dashboard-testnet.doma.xyz</span></li>
+                                    <li>🌉 <strong>Bridge:</strong> <span class="highlight">bridge-testnet.doma.xyz</span></li>
+                                    <li>💬 <strong>Discord Support:</strong> <span class="highlight">discord.com/invite/doma</span></li>
+                                    <li>📧 <strong>Help Desk:</strong> <span class="highlight">d3inc.atlassian.net/servicedesk</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                    `;
+                    break;
+            }
+            
+            content.innerHTML = guideContent;
+            modal.style.display = 'block';
+        }
+        
+        function closeModal() {
+            document.getElementById('helpModal').style.display = 'none';
+        }
+        
+        function openBridgeModal() {
+            const bridgeModal = document.getElementById('bridgeModal');
+            const bridgeFrame = document.getElementById('bridgeFrame');
+            
+            // Set iframe source
+            bridgeFrame.src = 'https://bridge-testnet.doma.xyz/';
+            
+            // Show modal
+            bridgeModal.style.display = 'block';
+        }
+        
+        function closeBridgeModal() {
+            const bridgeModal = document.getElementById('bridgeModal');
+            const bridgeFrame = document.getElementById('bridgeFrame');
+            
+            // Hide modal and clear iframe
+            bridgeModal.style.display = 'none';
+            bridgeFrame.src = '';
+        }
+        
+        function openBridge() {
+            window.open('https://bridge-testnet.doma.xyz/', '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+        }
+        
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const helpModal = document.getElementById('helpModal');
+            const bridgeModal = document.getElementById('bridgeModal');
+            
+            if (event.target === helpModal) {
+                closeModal();
+            }
+            if (event.target === bridgeModal) {
+                closeBridgeModal();
+            }
+        }
+    </script>
 </body>
 </html>
